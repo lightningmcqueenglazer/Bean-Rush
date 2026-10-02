@@ -1,1 +1,32 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bean Rush</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" class="hide"><span id="rn"></span><span id="tm"></span><span id="ql"></span></div>
+<div id="msg"></div>
+<div id="menu">
+  <h1>Bean Rush</h1>
+  <p>Survive three rounds. Win the golden crown.</p>
+  <label>Color <input type="color" id="col" value="#ff5fa2"></label>
+  <label>Hat
+    <select id="hat">
+      <option value="none">None</option>
+      <option value="cone">Party cone</option>
+      <option value="top">Top hat</option>
+      <option value="crown">Little crown</option>
+    </select>
+  </label>
+  <button id="play">Play</button>
+  <div id="stats"></div>
+  <small>Move: WASD or arrows. Jump: Space.</small>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
