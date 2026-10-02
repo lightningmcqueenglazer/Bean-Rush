@@ -1,5 +1,6 @@
 (() => {
 const $ = id => document.getElementById(id);
+if (typeof THREE === 'undefined') { $('err').textContent = 'Could not load three.js. Check your internet connection and reload.'; return; }
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const M = c => new THREE.MeshLambertMaterial({ color: c });
@@ -146,23 +147,29 @@ function finish(w) {
   show(w.me ? 'YOU WIN!\nGolden crown!' : `${w.name} wins!`);
   if (w.me) { save.wins++; save.coins += 100; save.xp += 100; store(); }
   for (let i = 0; i < 80; i++) { const c = document.createElement('div'); c.className = 'confetti'; c.style.left = rnd(0, 100) + 'vw'; c.style.background = `hsl(${rnd(0, 360)},90%,60%)`; c.style.animationDelay = rnd(0, 1.5) + 's'; document.body.appendChild(c); setTimeout(() => c.remove(), 6000); }
-  setTimeout(() => { $('msg').textContent = ''; $('hud').classList.add('hide'); $('menu').classList.remove('hide'); state = 'menu'; }, 6000);
+  setTimeout(() => { $('msg').textContent = ''; $('hud').classList.add('hide'); $('menu').classList.remove('hide'); state = 'menu'; refresh(); }, 6000);
 }
 
 function newMatch() {
-  ents.forEach(e => scene.remove(e.m));
+  ents.forEach(e => scene.remove(e.m)); scene.remove(prev);
   ents = [{ me: 1, name: 'You', sp: 1, id: 0, m: makeBean($('col').value, $('hat').value) }];
   for (let i = 0; i < 11; i++) ents.push({ name: NAMES[i], sp: rnd(.82, .98), id: i + 1, m: makeBean(new THREE.Color().setHSL(Math.random(), .8, .6), ['none', 'cone', 'top', 'crown'][i % 4]) });
   me = ents[0]; $('menu').classList.add('hide'); $('hud').classList.remove('hide'); startRound(0);
 }
-$('play').onclick = () => { try { ac = ac || new AudioContext(); } catch (e) {} newMatch(); };
+let prev;
+const refresh = () => { scene.remove(prev); prev = makeBean($('col').value, $('hat').value); };
+['input', 'change'].forEach(ev => { $('col').addEventListener(ev, refresh); $('hat').addEventListener(ev, refresh); });
+refresh();
+$('play').addEventListener('click', () => {
+  try { newMatch(); } catch (err) { console.error(err); $('err').textContent = 'Error: ' + err.message; $('menu').classList.remove('hide'); }
+});
 
 /* ---------- Main loop ---------- */
 let last = performance.now();
 function loop(now) {
   requestAnimationFrame(loop);
   const dt = Math.min(.05, (now - last) / 1000); last = now;
-  if (state === 'menu') { cam.position.set(0, 5, 14); cam.lookAt(0, 1, 0); ren.render(scene, cam); return; }
+  if (state === 'menu') { prev.rotation.y += dt; cam.position.set(0, 2.5, 7); cam.lookAt(0, 3.4, 0); ren.render(scene, cam); return; }
   plats.forEach(p => { if (p.amp) { p.x = p.ox + p.amp * Math.sin(t * p.spd + p.ph); p.m.position.x = p.x; } });
   spins.forEach(s => s.m.rotation.y = -t * s.sp);
   if (state === 'count') {
