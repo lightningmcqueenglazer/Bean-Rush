@@ -30,3 +30,4 @@ small{opacity:.8}
 .fw{position:fixed;width:7px;height:7px;border-radius:50%;pointer-events:none;animation:fw 1.3s ease-out forwards}
 @keyframes fw{to{transform:translate(var(--x),var(--y));opacity:0}}
 @media (prefers-reduced-motion:reduce){.confetti,.fw{animation-duration:6s}}
+button.big{display:block;width:100%;font-size:34px;padding:14px;background:#06d6a0;margin:6px 0 12px;letter-spacing:2px}
