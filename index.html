@@ -1,18 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bean Rush</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bean Rush 3D</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<canvas id="c"></canvas>
-<div id="hud" class="hide"><span id="rn"></span><span id="tm"></span><span id="ql"></span></div>
-<div id="msg"></div>
-<div id="ui"><h1>Bean Rush</h1><p>Loading game...</p></div>
-<div id="err"></div>
-<script src="mini3d.js"></script>
-<script src="game.js"></script>
+
+    <div id="game">
+
+        <canvas id="canvas"></canvas>
+
+        <div id="hud">
+
+            <div class="topbar">
+                <div class="logo">BEAN RUSH</div>
+
+                <div class="stats">
+                    <span id="round">Round 1/4</span>
+                    <span id="players">Players: 20</span>
+                    <span id="xp">XP: 0</span>
+                    <span id="crowns">👑 0</span>
+                </div>
+
+                <button id="shopButton">SHOP</button>
+            </div>
+
+            <div id="message"></div>
+
+            <div id="progressContainer">
+                <div id="progressBar"></div>
+            </div>
+
+            <div id="controls">
+                WASD / Arrow Keys = Move &nbsp;&nbsp; SPACE = Jump &nbsp;&nbsp; SHIFT = Dive
+            </div>
+
+        </div>
+
+        <div id="menu" class="overlay">
+            <div class="panel">
+                <h1>BEAN RUSH</h1>
+                <p>Race. Survive. Qualify. Win the Crown.</p>
+
+                <button id="playButton">PLAY</button>
+                <button id="shopMenuButton">OPEN SHOP</button>
+            </div>
+        </div>
+
+        <div id="shop" class="overlay hidden">
+            <div class="panel shopPanel">
+                <h2>🛍️ BEAN SHOP</h2>
+
+                <p>XP: <span id="shopXP">0</span></p>
+
+                <div id="items"></div>
+
+                <button id="closeShop">CLOSE</button>
+            </div>
+        </div>
+
+        <div id="endScreen" class="overlay hidden">
+            <div class="panel">
+                <h1 id="endTitle">YOU QUALIFIED!</h1>
+                <p id="endText"></p>
+
+                <button id="nextButton">NEXT ROUND</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="mini3d.js"></script>
+    <script src="game.js"></script>
+
 </body>
 </html>
