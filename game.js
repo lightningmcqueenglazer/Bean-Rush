@@ -1,7 +1,7 @@
 try { (() => {
 const $ = id => document.getElementById(id);
 const rnd = (a, b) => a + Math.random() * (b - a), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), pick = a => a[Math.random() * a.length | 0];
-if (typeof THREE === 'undefined') throw new Error('three.js did not load. Check your internet connection and reload.');
+if (typeof THREE === 'undefined') throw new Error('mini3d.js did not load. Keep index.html, style.css, mini3d.js and game.js in the same folder.');
 const M = c => new THREE.MeshLambertMaterial({ color: c });
 
 /* ================= DATA ================= */
@@ -92,12 +92,12 @@ function build() {
   scene.remove(lvl); lvl = new THREE.Group(); scene.add(lvl); plats = []; spins = []; orbs = [];
   scene.background = new THREE.Color(R.sky); scene.fog.color.set(R.sky);
   const df = R.diff, pc = () => pick(R.pal);
-  const add = (x, z, w, d, col, o) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, 1, d), M(col)); m.position.set(x, -.5, z); lvl.add(m); const p = Object.assign({ x, ox: x, z, w, d, m }, o); plats.push(p); return p; };
+  const add = (x, z, w, d, col, o) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, 1, d), M(col)); m.position.set(x, -.5, z); m.renderOrder = -1; lvl.add(m); const p = Object.assign({ x, ox: x, z, w, d, m }, o); plats.push(p); return p; };
   const spin = (x, z, len, sp, osc) => { const m = new THREE.Mesh(new THREE.BoxGeometry(len, 1.2, .8), M(osc ? 0xff9f1c : 0xff4040)); m.position.set(x, .6, z); lvl.add(m); spins.push({ x, z, len, sp, base: sp, osc, a: 0, w: sp, m }); };
   if (R.type == 'survive') {
     for (let i = -3; i <= 3; i++) for (let j = -3; j <= 3; j++) add(i * 6, j * 6, 5.6, 5.6, pc(), { col: 1 });
     spin(0, 0, 44, 1 + df * .1); spin(0, 0, 22, -1.4);
-    const lava = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshBasicMaterial({ color: 0xff4500 })); lava.rotation.x = -Math.PI / 2; lava.position.y = -8; lvl.add(lava); return;
+    const lava = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshBasicMaterial({ color: 0xff4500 })); lava.rotation.x = -Math.PI / 2; lava.position.y = -8; lava.renderOrder = -2; lvl.add(lava); return;
   }
   if (R.type == 'team') {
     add(0, 0, 44, 44, R.pal[0]); spin(0, 0, 30, .8);
@@ -182,7 +182,7 @@ function startRound(i) {
   R = Object.assign({}, MAPS[id], { diff: Math.min(4, i % 4 + 1), q: Q[i] || 1 });
   build(); const al = alive(); al.forEach((e, k) => spawn(e, k, al.length)); finished = []; t = 0; cd = 3; state = 'count'; teamScore = [0, 0, 0];
   if (R.type == 'team') {
-    teamN = al.length >= 9 ? 3 : 2; al.sort(() => Math.random() - .5).forEach((e, k) => { e.team = k % teamN; const r = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, .05, 16), new THREE.MeshBasicMaterial({ color: TEAMS[e.team][1] })); r.position.y = .03; e.m.add(r); e.ring = r; });
+    teamN = al.length >= 9 ? 3 : 2; al.sort(() => Math.random() - .5).forEach((e, k) => { e.team = k % teamN; const r = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, .05, 16), new THREE.MeshBasicMaterial({ color: TEAMS[e.team][1] })); r.position.y = .03; r.renderOrder = -.5; e.m.add(r); e.ring = r; });
   }
   $('rn').textContent = `Round ${i + 1}/${practice ? '∞' : maps.length}: ${R.n}`;
   show(`${R.n}\n` + (R.type == 'race' ? `Top ${R.q} qualify` : R.type == 'survive' ? `Survive ${R.time}s!` : `You are on the ${TEAMS[me.team || 0][0]} team!`));
@@ -241,7 +241,7 @@ function render() {
   const [lv, cur, need] = lvlOf(S.xp);
   let h = `<h1>Bean Rush</h1><div class="tabs">${['play', 'customize', 'shop', 'profile'].map(k => `<button data-a="tab" data-v="${k}" class="${tab == k ? 'on' : ''}">${k}</button>`).join('')}<span class="chip">Lv ${lv} · ${S.coins} coins · ${S.crowns} crowns</span></div>`;
   if (tab == 'play') {
-    h += (loginBonus ? '<p><b>Daily login reward: +50 coins!</b></p>' : '') + Object.keys(MODES).map(m => `<div class="row"><button data-a="mode" data-v="${m}">${m}</button><small>${MODEINFO[m]}</small></div>`).join('') + '<p><small>Move: WASD/arrows · Jump: Space · Dive: Shift or E · Emote: Q · Mute: M · Quit: Esc</small></p>';
+    h += '<button class="big" data-a="mode" data-v="classic">PLAY</button>' + (loginBonus ? '<p><b>Daily login reward: +50 coins!</b></p>' : '') + Object.keys(MODES).map(m => `<div class="row"><button data-a="mode" data-v="${m}">${m}</button><small>${MODEINFO[m]}</small></div>`).join('') + '<p><small>Move: WASD/arrows · Jump: Space · Dive: Shift or E · Emote: Q · Mute: M · Quit: Esc</small></p>';
   } else if (tab == 'customize') {
     h += `<div class="row"><label>Main color</label><input type="color" data-k="c1" value="${S.look.c1}"><label>Second</label><input type="color" data-k="c2" value="${S.look.c2}"></div><div class="row"><label>Pattern</label><select data-k="pat">${['none', 'stripes', 'dots', 'half'].map(p => `<option ${S.look.pat == p ? 'selected' : ''}>${p}</option>`).join('')}</select></div>`;
     h += Object.keys(SLOTS).map(s => `<div class="row"><label>${SLOTS[s]}</label><select data-k="${s}">${ITEMS.filter(i => i.slot == s).map(i => `<option value="${i.id}" ${S.look[s] == i.id ? 'selected' : ''} ${owned(i) ? '' : 'disabled'}>${i.name}${owned(i) ? '' : ' (locked)'}</option>`).join('')}</select></div>`).join('');
