@@ -1,18 +1,32 @@
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;overflow:hidden;font-family:"Trebuchet MS","Comic Sans MS",sans-serif;background:#8fd8ff}
+html,body{margin:0;height:100%;overflow:hidden;font-family:"Trebuchet MS","Comic Sans MS",sans-serif;background:#8fd8ff;color:#2b2d42}
 #c{position:fixed;inset:0;width:100%;height:100%}
 .hide{display:none!important}
-#hud{position:fixed;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:14px;background:#fff;border:4px solid #2b2d42;border-radius:18px;padding:8px 18px;font-weight:700;color:#2b2d42;box-shadow:0 5px 0 #2b2d42}
-#msg{position:fixed;top:32%;left:0;right:0;text-align:center;font-size:clamp(28px,7vw,72px);font-weight:900;color:#fff;-webkit-text-stroke:3px #2b2d42;paint-order:stroke fill;text-shadow:0 6px 0 #2b2d42;pointer-events:none;white-space:pre-line}
-#menu{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:4vh!important;gap:12px;background:transparent;color:#2b2d42;text-align:center;padding:20px}
-#menu h1{margin:0;color:#fff;font-size:clamp(48px,12vw,110px);-webkit-text-stroke:4px #2b2d42;paint-order:stroke fill;text-shadow:0 8px 0 #2b2d42}
-#menu label{font-size:20px;font-weight:700;display:flex;gap:10px;align-items:center}
-#menu select,#menu input{font-size:18px;border:3px solid #2b2d42;border-radius:10px;padding:4px 8px}
-#menu input[type=color]{width:64px;height:40px;padding:2px}
-#play{font:900 32px inherit;font-family:inherit;padding:12px 56px;border:4px solid #2b2d42;border-radius:999px;background:#ffd166;color:#2b2d42;box-shadow:0 7px 0 #2b2d42;cursor:pointer}
-#play:active{transform:translateY(5px);box-shadow:0 2px 0 #2b2d42}
-#play:focus-visible{outline:4px solid #fff}
+#hud{position:fixed;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:14px;flex-wrap:wrap;justify-content:center;background:#fff;border:4px solid #2b2d42;border-radius:18px;padding:8px 18px;font-weight:700;box-shadow:0 5px 0 #2b2d42}
+#msg{position:fixed;top:30%;left:0;right:0;text-align:center;font-size:clamp(26px,6vw,64px);font-weight:900;color:#fff;-webkit-text-stroke:3px #2b2d42;paint-order:stroke fill;text-shadow:0 6px 0 #2b2d42;pointer-events:none;white-space:pre-line}
+#ui{position:fixed;top:0;left:0;bottom:0;width:min(470px,100%);overflow:auto;padding:14px;background:rgba(255,255,255,.82)}
+#ui h1{margin:0 0 6px;font-size:44px;color:#ff5fa2;-webkit-text-stroke:2px #2b2d42;paint-order:stroke fill}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.chip{margin-left:auto;font-weight:700;font-size:13px}
+button,select,input{font:inherit}
+button{border:3px solid #2b2d42;border-radius:12px;background:#ffd166;padding:6px 12px;font-weight:800;cursor:pointer;color:#2b2d42;box-shadow:0 3px 0 #2b2d42;text-transform:capitalize}
+button:active{transform:translateY(3px);box-shadow:none}
+button.on{background:#ff5fa2;color:#fff}
+button:focus-visible,select:focus-visible{outline:3px solid #118ab2}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.card{border:3px solid #2b2d42;border-radius:12px;padding:8px;background:#fff;display:flex;flex-direction:column;gap:4px}
+.row{display:flex;gap:8px;align-items:center;margin:6px 0;flex-wrap:wrap}
+.row label{min-width:80px;font-weight:700}
+select,input[type=color]{border:2px solid #2b2d42;border-radius:8px;padding:3px}
+input[type=color]{width:48px;height:32px}
+.bar{height:14px;border:3px solid #2b2d42;border-radius:9px;background:#fff;overflow:hidden}
+.bar i{display:block;height:100%;background:#06d6a0}
+h3{margin:12px 0 4px}
+small{opacity:.8}
+#err{position:fixed;bottom:10px;left:10px;right:10px;color:#b00020;font-weight:700;background:#fff;border-radius:10px;padding:0 10px;z-index:9}
+#err:empty{display:none}
 .confetti{position:fixed;top:-20px;width:10px;height:16px;animation:fall 3s linear forwards;pointer-events:none}
 @keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
-@media (prefers-reduced-motion:reduce){.confetti{animation-duration:6s}}
-#err{color:#b00020;font-weight:700;background:#fff;border-radius:10px;padding:0 10px}#err:empty{display:none}
+.fw{position:fixed;width:7px;height:7px;border-radius:50%;pointer-events:none;animation:fw 1.3s ease-out forwards}
+@keyframes fw{to{transform:translate(var(--x),var(--y));opacity:0}}
+@media (prefers-reduced-motion:reduce){.confetti,.fw{animation-duration:6s}}
