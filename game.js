@@ -1,5 +1,13 @@
+// =====================================================
+// BEAN RUSH 3D
+// game.js
+// =====================================================
+
+// -------------------------
+// GET HTML ELEMENTS
+// -------------------------
+
 const canvas = document.getElementById("canvas");
-const engine = new Mini3D(canvas);
 
 const menu = document.getElementById("menu");
 const shop = document.getElementById("shop");
@@ -15,11 +23,51 @@ const roundText = document.getElementById("round");
 const playersText = document.getElementById("players");
 const xpText = document.getElementById("xp");
 const crownText = document.getElementById("crowns");
+
 const progressBar = document.getElementById("progressBar");
 const message = document.getElementById("message");
 
 const shopXP = document.getElementById("shopXP");
 const itemsDiv = document.getElementById("items");
+
+
+// -------------------------
+// CHECK THAT HTML EXISTS
+// -------------------------
+
+if (!canvas) {
+    console.error("Canvas was not found.");
+}
+
+if (!playButton) {
+    console.error("Play button was not found.");
+}
+
+
+// -------------------------
+// 3D ENGINE
+// -------------------------
+
+const engine = new Mini3D(canvas);
+
+
+// -------------------------
+// GAME VARIABLES
+// -------------------------
+
+let gameRunning = false;
+
+let round = 1;
+
+let playersRemaining = 20;
+
+let finishZ = 100;
+
+let obstacles = [];
+
+let bots = [];
+
+let keys = {};
 
 
 // -------------------------
@@ -29,48 +77,41 @@ const itemsDiv = document.getElementById("items");
 const player = {
 
     x: 0,
+
     y: 0,
+
     z: 0,
 
     vx: 0,
+
     vy: 0,
+
     vz: 0,
 
     speed: 0.18,
-    jump: 0.32,
 
-    color: "#19d9ff",
+    jump: 0.32,
 
     grounded: true,
 
-    progress: 0
+    progress: 0,
+
+    color: "#19d9ff"
 };
 
 
 // -------------------------
-// GAME DATA
+// XP / CROWNS
 // -------------------------
 
-let gameRunning = false;
+let xp =
+    Number(localStorage.getItem("beanXP")) || 0;
 
-let round = 1;
-
-let playersRemaining = 20;
-
-let xp = Number(localStorage.getItem("beanXP")) || 0;
-
-let crowns = Number(localStorage.getItem("beanCrowns")) || 0;
+let crowns =
+    Number(localStorage.getItem("beanCrowns")) || 0;
 
 let currentSkin =
     localStorage.getItem("beanSkin") || "blue";
-
-let keys = {};
-
-let obstacles = [];
-
-let bots = [];
-
-let finishZ = 100;
 
 
 // -------------------------
@@ -120,109 +161,45 @@ const skins = [
         price: 15000,
         color: "#ffd700"
     }
+
 ];
 
 
-// -------------------------
-// SHOP
-// -------------------------
+// =====================================================
+// HUD
+// =====================================================
 
-function renderShop() {
+function updateHUD() {
 
-    shopXP.textContent = xp;
+    if (roundText) {
+        roundText.textContent =
+            `Round ${round}/4`;
+    }
 
-    itemsDiv.innerHTML = "";
+    if (playersText) {
+        playersText.textContent =
+            `Players: ${playersRemaining}`;
+    }
 
-    skins.forEach(skin => {
+    if (xpText) {
+        xpText.textContent =
+            `XP: ${xp}`;
+    }
 
-        const item = document.createElement("div");
+    if (crownText) {
+        crownText.textContent =
+            `👑 ${crowns}`;
+    }
 
-        item.className = "shopItem";
-
-        const owned =
-            skin.price === 0 ||
-            localStorage.getItem("skin_" + skin.id) === "true";
-
-        item.innerHTML = `
-
-            <div
-                class="skinPreview"
-                style="background:${skin.color}">
-            </div>
-
-            <div class="skinInfo">
-                <strong>${skin.name}</strong>
-                <span>
-                    ${owned ? "Owned" : skin.price + " XP"}
-                </span>
-            </div>
-
-            <button class="buyButton">
-                ${currentSkin === skin.id
-                    ? "EQUIPPED"
-                    : owned
-                        ? "EQUIP"
-                        : "BUY"}
-            </button>
-        `;
-
-        const button = item.querySelector("button");
-
-        button.onclick = () => {
-
-            if (owned) {
-
-                currentSkin = skin.id;
-
-                localStorage.setItem(
-                    "beanSkin",
-                    skin.id
-                );
-
-                player.color = skin.color;
-
-                renderShop();
-
-                return;
-            }
-
-            if (xp >= skin.price) {
-
-                xp -= skin.price;
-
-                localStorage.setItem(
-                    "beanXP",
-                    xp
-                );
-
-                localStorage.setItem(
-                    "skin_" + skin.id,
-                    "true"
-                );
-
-                currentSkin = skin.id;
-
-                localStorage.setItem(
-                    "beanSkin",
-                    skin.id
-                );
-
-                player.color = skin.color;
-
-                updateHUD();
-
-                renderShop();
-            }
-        };
-
-        itemsDiv.appendChild(item);
-    });
+    if (shopXP) {
+        shopXP.textContent = xp;
+    }
 }
 
 
-// -------------------------
+// =====================================================
 // XP
-// -------------------------
+// =====================================================
 
 function addXP(amount) {
 
@@ -237,127 +214,199 @@ function addXP(amount) {
 }
 
 
-// -------------------------
-// HUD
-// -------------------------
-
-function updateHUD() {
-
-    roundText.textContent =
-        `Round ${round}/4`;
-
-    playersText.textContent =
-        `Players: ${playersRemaining}`;
-
-    xpText.textContent =
-        `XP: ${xp}`;
-
-    crownText.textContent =
-        `👑 ${crowns}`;
-
-    shopXP.textContent = xp;
-}
-
-
-// -------------------------
+// =====================================================
 // INPUT
-// -------------------------
+// =====================================================
 
-window.addEventListener("keydown", e => {
+window.addEventListener("keydown", function(event) {
 
-    keys[e.key.toLowerCase()] = true;
+    keys[event.key.toLowerCase()] = true;
 
-    if (e.code === "Space")
+    if (event.code === "Space") {
+
+        event.preventDefault();
+
         jump();
-});
+    }
 
-window.addEventListener("keyup", e => {
-
-    keys[e.key.toLowerCase()] = false;
 });
 
 
-// -------------------------
+window.addEventListener("keyup", function(event) {
+
+    keys[event.key.toLowerCase()] = false;
+
+});
+
+
+// =====================================================
 // PLAYER MOVEMENT
-// -------------------------
+// =====================================================
 
 function updatePlayer() {
 
-    if (!gameRunning)
+    if (!gameRunning) {
         return;
+    }
 
     let forward = 0;
+
     let sideways = 0;
 
-    if (keys["w"] || keys["arrowup"])
+
+    // Forward
+
+    if (
+        keys["w"] ||
+        keys["arrowup"]
+    ) {
+
         forward = 1;
+    }
 
-    if (keys["s"] || keys["arrowdown"])
+
+    // Backward
+
+    if (
+        keys["s"] ||
+        keys["arrowdown"]
+    ) {
+
         forward = -1;
+    }
 
-    if (keys["a"] || keys["arrowleft"])
+
+    // Left
+
+    if (
+        keys["a"] ||
+        keys["arrowleft"]
+    ) {
+
         sideways = -1;
+    }
 
-    if (keys["d"] || keys["arrowright"])
+
+    // Right
+
+    if (
+        keys["d"] ||
+        keys["arrowright"]
+    ) {
+
         sideways = 1;
+    }
 
-    player.vz += forward * 0.025;
-    player.vx += sideways * 0.025;
+
+    // Movement
+
+    player.vz +=
+        forward * 0.025;
+
+    player.vx +=
+        sideways * 0.025;
+
+
+    // Friction
 
     player.vz *= 0.88;
+
     player.vx *= 0.80;
 
-    player.vz = Math.max(
-        -0.25,
-        Math.min(.25, player.vz)
-    );
 
-    player.vx = Math.max(
-        -0.25,
-        Math.min(.25, player.vx)
-    );
+    // Speed limit
+
+    player.vz =
+        Math.max(
+            -0.25,
+            Math.min(
+                0.25,
+                player.vz
+            )
+        );
+
+    player.vx =
+        Math.max(
+            -0.25,
+            Math.min(
+                0.25,
+                player.vx
+            )
+        );
+
+
+    // Position
 
     player.z += player.vz;
+
     player.x += player.vx;
 
-    player.x = Math.max(
-        -7,
-        Math.min(7, player.x)
-    );
+
+    // Keep player on course
+
+    player.x =
+        Math.max(
+            -7,
+            Math.min(
+                7,
+                player.x
+            )
+        );
+
+
+    // Gravity
 
     player.y += player.vy;
 
     player.vy -= 0.018;
 
+
+    // Ground collision
+
     if (player.y <= 0) {
 
         player.y = 0;
+
         player.vy = 0;
+
         player.grounded = true;
     }
+
+
+    // Progress
 
     player.progress =
         Math.max(
             0,
             Math.min(
                 100,
-                player.z / finishZ * 100
+                (player.z / finishZ) * 100
             )
         );
 
-    progressBar.style.width =
-        player.progress + "%";
+
+    if (progressBar) {
+
+        progressBar.style.width =
+            player.progress + "%";
+    }
+
 }
 
 
-// -------------------------
+// =====================================================
 // JUMP
-// -------------------------
+// =====================================================
 
 function jump() {
 
-    if (!player.grounded)
+    if (!gameRunning) {
         return;
+    }
+
+    if (!player.grounded) {
+        return;
+    }
 
     player.vy = player.jump;
 
@@ -365,79 +414,132 @@ function jump() {
 }
 
 
-// -------------------------
-// BOTS
-// -------------------------
+// =====================================================
+// CREATE BOTS
+// =====================================================
 
 function createBots() {
 
     bots = [];
 
-    for (let i = 0; i < playersRemaining - 1; i++) {
+
+    for (
+        let i = 0;
+        i < playersRemaining - 1;
+        i++
+    ) {
+
+        const randomSkin =
+            skins[
+                Math.floor(
+                    Math.random() *
+                    skins.length
+                )
+            ];
+
 
         bots.push({
 
-            x: Math.random() * 12 - 6,
+            x:
+                Math.random() * 12 - 6,
 
             y: 0,
 
-            z: Math.random() * -10,
+            z:
+                Math.random() * -10,
 
             speed:
-                .08 +
-                Math.random() * .08,
+                0.08 +
+                Math.random() * 0.08,
 
             color:
-                skins[
-                    Math.floor(
-                        Math.random() * skins.length
-                    )
-                ].color,
+                randomSkin.color,
 
             alive: true
         });
+
     }
+
 }
 
+
+// =====================================================
+// UPDATE BOTS
+// =====================================================
 
 function updateBots() {
 
-    bots.forEach(bot => {
+    bots.forEach(function(bot) {
 
-        if (!bot.alive)
+        if (!bot.alive) {
             return;
+        }
+
 
         bot.z += bot.speed;
 
+
         bot.x +=
             Math.sin(
-                bot.z * .08
-            ) * .015;
+                bot.z * 0.08
+            ) * 0.015;
 
-        if (Math.random() < .003) {
 
-            if (Math.random() < .5)
-                bot.alive = false;
+        // Small random chance of falling
+
+        if (
+            Math.random() < 0.002
+        ) {
+
+            bot.alive = false;
         }
+
     });
+
 }
 
 
-// -------------------------
-// OBSTACLES
-// -------------------------
+// =====================================================
+// CREATE COURSE
+// =====================================================
 
 function createCourse() {
 
     obstacles = [];
 
-    // Main platforms
+
+    // Main course platforms
 
     for (
         let z = 0;
         z < finishZ;
         z += 10
     ) {
+
+        let platformColor;
+
+
+        if (round === 1) {
+
+            platformColor =
+                "#43d9ff";
+
+        } else if (round === 2) {
+
+            platformColor =
+                "#ff4fc3";
+
+        } else if (round === 3) {
+
+            platformColor =
+                "#a855ff";
+
+        } else {
+
+            platformColor =
+                "#ffcc22";
+        }
+
 
         obstacles.push({
 
@@ -449,23 +551,18 @@ function createCourse() {
 
             w: 16,
 
-            h: .5,
+            h: 0.5,
 
             d: 10,
 
-            color:
-                round === 1
-                    ? "#43d9ff"
-                    : round === 2
-                        ? "#ff4fc3"
-                        : round === 3
-                            ? "#a855ff"
-                            : "#ffcc22"
+            color: platformColor
+
         });
+
     }
 
 
-    // Spinning obstacles
+    // Spinning bars
 
     for (
         let z = 15;
@@ -479,14 +576,14 @@ function createCourse() {
 
             x: 0,
 
-            y: .6,
+            y: 0.6,
 
             z: z,
 
-            rotation: Math.random() * 6,
-
             color: "#ff4d4d"
+
         });
+
     }
 
 
@@ -516,318 +613,738 @@ function createCourse() {
             d: 2,
 
             color: "#ffe14d"
+
         });
+
     }
+
 }
 
 
-// -------------------------
-// COLLISION
-// -------------------------
+// =====================================================
+// OBSTACLE COLLISION
+// =====================================================
 
 function checkObstacles() {
 
-    for (const obstacle of obstacles) {
+    obstacles.forEach(function(obstacle) {
 
-        if (!obstacle.type)
-            continue;
+        if (!obstacle.type) {
+            return;
+        }
+
 
         const distance =
             Math.sqrt(
+
                 Math.pow(
-                    player.x - obstacle.x,
-                    2
-                ) +
-                Math.pow(
-                    player.z - obstacle.z,
+                    player.x -
+                    obstacle.x,
                     2
                 )
+
+                +
+
+                Math.pow(
+                    player.z -
+                    obstacle.z,
+                    2
+                )
+
             );
+
 
         if (distance < 1.8) {
 
-            if (obstacle.type === "spinner") {
+            // Spinner
 
-                player.vz -= .15;
+            if (
+                obstacle.type ===
+                "spinner"
+            ) {
+
+                player.vz -= 0.15;
 
                 player.vx +=
-                    Math.random() > .5
-                        ? .12
-                        : -.12;
+                    Math.random() > 0.5
+                        ? 0.12
+                        : -0.12;
             }
 
-            if (obstacle.type === "block") {
 
-                player.vz = -.15;
+            // Block
+
+            if (
+                obstacle.type ===
+                "block"
+            ) {
+
+                player.vz = -0.15;
             }
+
         }
-    }
+
+    });
+
 }
 
 
-// -------------------------
-// ROUND END
-// -------------------------
+// =====================================================
+// CHECK ROUND
+// =====================================================
 
 function checkRoundEnd() {
 
-    if (player.z >= finishZ) {
+    if (!gameRunning) {
+        return;
+    }
+
+
+    // Reached finish
+
+    if (
+        player.z >= finishZ
+    ) {
 
         qualify();
+
+        return;
     }
 
-    if (player.z < -15) {
+
+    // Fell far behind
+
+    if (
+        player.z < -15
+    ) {
 
         eliminate();
+
     }
+
 }
 
+
+// =====================================================
+// QUALIFY
+// =====================================================
 
 function qualify() {
 
     gameRunning = false;
 
-    addXP(
-        500 * round
-    );
+
+    const reward =
+        500 * round;
+
+    addXP(reward);
+
 
     playersRemaining =
         Math.max(
             2,
             Math.floor(
-                playersRemaining * .45
+                playersRemaining *
+                0.45
             )
         );
 
+
     updateHUD();
+
+
+    // Final
 
     if (round === 4) {
 
         winGame();
 
-    } else {
-
-        document.getElementById(
-            "endTitle"
-        ).textContent =
-            "QUALIFIED! 🎉";
-
-        document.getElementById(
-            "endText"
-        ).textContent =
-            `You survived Round ${round}! +${500 * round} XP`;
-
-        nextButton.textContent =
-            "NEXT ROUND";
-
-        endScreen.classList.remove(
-            "hidden"
-        );
+        return;
     }
+
+
+    document.getElementById(
+        "endTitle"
+    ).textContent =
+        "QUALIFIED! 🎉";
+
+
+    document.getElementById(
+        "endText"
+    ).textContent =
+        `You survived Round ${round}! +${reward} XP`;
+
+
+    nextButton.textContent =
+        "NEXT ROUND";
+
+
+    endScreen.classList.remove(
+        "hidden"
+    );
+
 }
 
+
+// =====================================================
+// ELIMINATION
+// =====================================================
 
 function eliminate() {
 
     gameRunning = false;
+
 
     document.getElementById(
         "endTitle"
     ).textContent =
         "ELIMINATED!";
 
+
     document.getElementById(
         "endText"
     ).textContent =
         "You fell off the course. Try again!";
 
+
     nextButton.textContent =
         "TRY AGAIN";
+
 
     endScreen.classList.remove(
         "hidden"
     );
+
 }
 
 
-// -------------------------
+// =====================================================
 // WIN
-// -------------------------
+// =====================================================
 
 function winGame() {
 
     crowns++;
+
 
     localStorage.setItem(
         "beanCrowns",
         crowns
     );
 
+
     addXP(5000);
 
+
     updateHUD();
+
 
     document.getElementById(
         "endTitle"
     ).textContent =
         "👑 YOU WON! 👑";
 
+
     document.getElementById(
         "endText"
     ).textContent =
         "You conquered the final round and earned a crown! +5000 XP";
 
+
     nextButton.textContent =
         "PLAY AGAIN";
+
 
     endScreen.classList.remove(
         "hidden"
     );
+
 }
 
 
-// -------------------------
-// NEW ROUND
-// -------------------------
+// =====================================================
+// START ROUND
+// =====================================================
 
 function startRound() {
+
+    console.log(
+        "Starting round:",
+        round
+    );
+
 
     endScreen.classList.add(
         "hidden"
     );
 
+
+    // Reset player
+
     player.x = 0;
+
     player.y = 0;
+
     player.z = 0;
 
     player.vx = 0;
+
     player.vy = 0;
+
     player.vz = 0;
 
-    player.color =
+    player.progress = 0;
+
+
+    // Set skin
+
+    const selectedSkin =
         skins.find(
-            s => s.id === currentSkin
-        ).color;
+            skin =>
+                skin.id ===
+                currentSkin
+        );
+
+
+    if (selectedSkin) {
+
+        player.color =
+            selectedSkin.color;
+
+    }
+
+
+    // Create map
 
     createCourse();
 
+
+    // Create other players
+
     createBots();
+
+
+    // Start game
 
     gameRunning = true;
 
-    message.textContent =
-        round === 4
-            ? "FINAL ROUND!"
-            : `ROUND ${round}`;
+
+    if (round === 4) {
+
+        message.textContent =
+            "👑 FINAL ROUND!";
+
+    } else {
+
+        message.textContent =
+            `ROUND ${round}`;
+    }
+
 
     updateHUD();
+
 }
 
 
-// -------------------------
-// NEW GAME
-// -------------------------
+// =====================================================
+// START ENTIRE GAME
+// =====================================================
 
 function newGame() {
+
+    console.log(
+        "Starting new game..."
+    );
+
 
     round = 1;
 
     playersRemaining = 20;
 
+
     menu.classList.add(
         "hidden"
     );
 
+
     startRound();
+
 }
 
 
-// -------------------------
-// NEXT ROUND
-// -------------------------
+// =====================================================
+// PLAY BUTTON
+// =====================================================
 
-nextButton.onclick = () => {
+if (playButton) {
 
-    if (
-        nextButton.textContent ===
-        "TRY AGAIN"
-    ) {
+    playButton.addEventListener(
+        "click",
+        function(event) {
 
-        startRound();
+            event.preventDefault();
 
+            console.log(
+                "PLAY BUTTON CLICKED"
+            );
+
+
+            // Hide menu
+
+            menu.classList.add(
+                "hidden"
+            );
+
+
+            // Start from Round 1
+
+            round = 1;
+
+            playersRemaining = 20;
+
+
+            // Reset player
+
+            player.x = 0;
+
+            player.y = 0;
+
+            player.z = 0;
+
+            player.vx = 0;
+
+            player.vy = 0;
+
+            player.vz = 0;
+
+
+            // Build course
+
+            createCourse();
+
+
+            // Create opponents
+
+            createBots();
+
+
+            // Start game
+
+            gameRunning = true;
+
+
+            message.textContent =
+                "ROUND 1";
+
+
+            updateHUD();
+
+
+            console.log(
+                "GAME STARTED"
+            );
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// NEXT ROUND BUTTON
+// =====================================================
+
+if (nextButton) {
+
+    nextButton.addEventListener(
+        "click",
+        function() {
+
+
+            // Retry
+
+            if (
+                nextButton.textContent ===
+                "TRY AGAIN"
+            ) {
+
+                startRound();
+
+                return;
+            }
+
+
+            // Play again after victory
+
+            if (
+                nextButton.textContent ===
+                "PLAY AGAIN"
+            ) {
+
+                newGame();
+
+                return;
+            }
+
+
+            // Move to next round
+
+            round++;
+
+
+            startRound();
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// SHOP
+// =====================================================
+
+function renderShop() {
+
+    if (!itemsDiv) {
         return;
     }
 
-    if (
-        nextButton.textContent ===
-        "PLAY AGAIN"
-    ) {
 
-        newGame();
-
-        return;
-    }
-
-    round++;
-
-    startRound();
-};
+    shopXP.textContent =
+        xp;
 
 
-// -------------------------
-// SHOP BUTTONS
-// -------------------------
+    itemsDiv.innerHTML = "";
+
+
+    skins.forEach(function(skin) {
+
+
+        const item =
+            document.createElement(
+                "div"
+            );
+
+
+        item.className =
+            "shopItem";
+
+
+        const owned =
+            skin.price === 0 ||
+            localStorage.getItem(
+                "skin_" + skin.id
+            ) === "true";
+
+
+        item.innerHTML = `
+
+            <div
+                class="skinPreview"
+                style="
+                    background:${skin.color};
+                "
+            ></div>
+
+            <div class="skinInfo">
+
+                <strong>
+                    ${skin.name}
+                </strong>
+
+                <span>
+                    ${
+                        owned
+                            ? "Owned"
+                            : skin.price + " XP"
+                    }
+                </span>
+
+            </div>
+
+            <button class="buyButton">
+
+                ${
+                    currentSkin === skin.id
+                        ? "EQUIPPED"
+                        : owned
+                            ? "EQUIP"
+                            : "BUY"
+                }
+
+            </button>
+
+        `;
+
+
+        const button =
+            item.querySelector(
+                ".buyButton"
+            );
+
+
+        button.addEventListener(
+            "click",
+            function() {
+
+
+                // Already owned
+
+                if (owned) {
+
+                    currentSkin =
+                        skin.id;
+
+
+                    localStorage.setItem(
+                        "beanSkin",
+                        currentSkin
+                    );
+
+
+                    player.color =
+                        skin.color;
+
+
+                    renderShop();
+
+                    return;
+                }
+
+
+                // Buy
+
+                if (
+                    xp >= skin.price
+                ) {
+
+                    xp -=
+                        skin.price;
+
+
+                    localStorage.setItem(
+                        "beanXP",
+                        xp
+                    );
+
+
+                    localStorage.setItem(
+                        "skin_" +
+                        skin.id,
+                        "true"
+                    );
+
+
+                    currentSkin =
+                        skin.id;
+
+
+                    localStorage.setItem(
+                        "beanSkin",
+                        currentSkin
+                    );
+
+
+                    player.color =
+                        skin.color;
+
+
+                    updateHUD();
+
+                    renderShop();
+
+                } else {
+
+                    alert(
+                        "You don't have enough XP!"
+                    );
+
+                }
+
+            }
+        );
+
+
+        itemsDiv.appendChild(
+            item
+        );
+
+    });
+
+}
+
+
+// =====================================================
+// OPEN SHOP
+// =====================================================
 
 function openShop() {
 
     renderShop();
 
+
     shop.classList.remove(
         "hidden"
     );
+
 }
 
-shopButton.onclick = openShop;
 
-shopMenuButton.onclick = openShop;
+// =====================================================
+// SHOP BUTTONS
+// =====================================================
 
-closeShop.onclick = () => {
+if (shopButton) {
 
-    shop.classList.add(
-        "hidden"
+    shopButton.addEventListener(
+        "click",
+        openShop
     );
-};
+
+}
 
 
-// -------------------------
-// PLAY BUTTON
-// -------------------------
+if (shopMenuButton) {
 
-playButton.onclick = newGame;
+    shopMenuButton.addEventListener(
+        "click",
+        openShop
+    );
+
+}
 
 
-// -------------------------
-// DRAW
-// -------------------------
+if (closeShop) {
+
+    closeShop.addEventListener(
+        "click",
+        function() {
+
+            shop.classList.add(
+                "hidden"
+            );
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// DRAW WORLD
+// =====================================================
 
 function drawWorld() {
 
-    engine.clear("#75dcff");
-
-    // Sky
-
-    engine.ctx.fillStyle =
-        "#75dcff";
-
-    engine.ctx.fillRect(
-        0,
-        0,
-        engine.width,
-        engine.height
+    engine.clear(
+        "#75dcff"
     );
 
 
+    // -------------------------
     // Clouds
+    // -------------------------
 
     for (
         let i = 0;
@@ -841,6 +1358,7 @@ function drawWorld() {
         const z =
             20 + i * 25;
 
+
         const p =
             engine.project(
                 x,
@@ -848,10 +1366,14 @@ function drawWorld() {
                 z
             );
 
-        if (!p)
+
+        if (!p) {
             continue;
+        }
+
 
         engine.ctx.beginPath();
+
 
         engine.ctx.arc(
             p.x,
@@ -861,38 +1383,58 @@ function drawWorld() {
             Math.PI * 2
         );
 
+
         engine.ctx.fillStyle =
             "rgba(255,255,255,.7)";
 
+
         engine.ctx.fill();
+
     }
 
 
-    // Ground
+    // -------------------------
+    // Course
+    // -------------------------
 
     obstacles.forEach(
-        obstacle => {
+        function(obstacle) {
 
             if (!obstacle.type) {
 
                 engine.cube(
+
                     obstacle.x,
+
                     obstacle.y,
+
                     obstacle.z,
+
                     obstacle.w,
+
                     obstacle.h,
+
                     obstacle.d,
+
                     obstacle.color
+
                 );
+
             }
+
         }
     );
 
 
+    // -------------------------
     // Obstacles
+    // -------------------------
 
     obstacles.forEach(
-        obstacle => {
+        function(obstacle) {
+
+
+            // Block
 
             if (
                 obstacle.type ===
@@ -900,15 +1442,27 @@ function drawWorld() {
             ) {
 
                 engine.cube(
+
                     obstacle.x,
+
                     obstacle.y,
+
                     obstacle.z,
+
                     obstacle.w,
+
                     obstacle.h,
+
                     obstacle.d,
+
                     obstacle.color
+
                 );
+
             }
+
+
+            // Spinner
 
             if (
                 obstacle.type ===
@@ -917,31 +1471,46 @@ function drawWorld() {
 
                 const angle =
                     performance.now() *
-                    .003;
+                    0.003;
+
 
                 const x =
                     obstacle.x +
                     Math.cos(angle) * 3;
 
+
                 const z =
                     obstacle.z +
                     Math.sin(angle) * 3;
 
+
                 engine.cube(
+
                     x,
+
                     obstacle.y,
+
                     z,
+
                     5,
-                    .5,
-                    .5,
+
+                    0.5,
+
+                    0.5,
+
                     obstacle.color
+
                 );
+
             }
+
         }
     );
 
 
-    // Finish line
+    // -------------------------
+    // Finish Line
+    // -------------------------
 
     for (
         let x = -8;
@@ -950,104 +1519,175 @@ function drawWorld() {
     ) {
 
         engine.cube(
+
             x,
-            .1,
+
+            0.1,
+
             finishZ,
+
             2,
-            .2,
+
+            0.2,
+
             2,
+
             x % 4 === 0
                 ? "#ffffff"
                 : "#222222"
+
         );
+
     }
 
 
+    // -------------------------
     // Bots
+    // -------------------------
 
-    bots.forEach(bot => {
+    bots.forEach(
+        function(bot) {
 
-        if (!bot.alive)
-            return;
-
-        engine.sphere(
-            bot.x,
-            1,
-            bot.z,
-            .65,
-            bot.color
-        );
-
-        engine.sphere(
-            bot.x,
-            1.6,
-            bot.z,
-            .5,
-            bot.color
-        );
-    });
+            if (!bot.alive) {
+                return;
+            }
 
 
-    // Player
+            engine.sphere(
 
-    engine.sphere(
-        player.x,
-        .9 + player.y,
-        player.z,
-        .7,
-        player.color
+                bot.x,
+
+                0.9,
+
+                bot.z,
+
+                0.65,
+
+                bot.color
+
+            );
+
+
+            engine.sphere(
+
+                bot.x,
+
+                1.55,
+
+                bot.z,
+
+                0.55,
+
+                bot.color
+
+            );
+
+        }
     );
 
+
+    // -------------------------
+    // Player Body
+    // -------------------------
+
     engine.sphere(
+
         player.x,
+
+        0.9 + player.y,
+
+        player.z,
+
+        0.7,
+
+        player.color
+
+    );
+
+
+    // Player head
+
+    engine.sphere(
+
+        player.x,
+
         1.55 + player.y,
+
         player.z,
-        .55,
+
+        0.55,
+
         player.color
+
     );
 
+
+    // -------------------------
     // Eyes
+    // -------------------------
 
-    const eyeOffset = .22;
+    const eyeOffset = 0.22;
 
-    engine.sphere(
-        player.x - eyeOffset,
-        1.7 + player.y,
-        player.z - .45,
-        .09,
-        "#111111"
-    );
 
     engine.sphere(
-        player.x + eyeOffset,
+
+        player.x -
+        eyeOffset,
+
         1.7 + player.y,
-        player.z - .45,
-        .09,
+
+        player.z - 0.45,
+
+        0.09,
+
         "#111111"
+
     );
+
+
+    engine.sphere(
+
+        player.x +
+        eyeOffset,
+
+        1.7 + player.y,
+
+        player.z - 0.45,
+
+        0.09,
+
+        "#111111"
+
+    );
+
 }
 
 
-// -------------------------
+// =====================================================
 // CAMERA
-// -------------------------
+// =====================================================
 
 function updateCamera() {
 
     engine.camera.x +=
-        (player.x - engine.camera.x)
-        * .08;
+        (
+            player.x -
+            engine.camera.x
+        ) * 0.08;
+
 
     engine.camera.y = 6;
 
+
     engine.camera.z =
         player.z - 12;
+
 }
 
 
-// -------------------------
+// =====================================================
 // GAME LOOP
-// -------------------------
+// =====================================================
 
 function gameLoop() {
 
@@ -1063,21 +1703,42 @@ function gameLoop() {
 
     drawWorld();
 
+
     requestAnimationFrame(
         gameLoop
     );
+
 }
 
 
-// -------------------------
-// START
-// -------------------------
+// =====================================================
+// INITIALIZE
+// =====================================================
 
-player.color =
+const initialSkin =
     skins.find(
-        s => s.id === currentSkin
-    ).color;
+        skin =>
+            skin.id ===
+            currentSkin
+    );
+
+
+if (initialSkin) {
+
+    player.color =
+        initialSkin.color;
+
+}
+
 
 updateHUD();
 
+
+// Start rendering immediately
+
 gameLoop();
+
+
+console.log(
+    "Bean Rush loaded successfully!"
+);
