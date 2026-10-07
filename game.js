@@ -1,1744 +1,2007 @@
-// =====================================================
-// BEAN RUSH 3D
-// game.js
-// =====================================================
+/*
+=========================================================
+BEAN RUSH 3D
+GitHub Pages browser game
+=========================================================
+*/
 
-// -------------------------
-// GET HTML ELEMENTS
-// -------------------------
+const canvas = document.createElement("canvas");
 
-const canvas = document.getElementById("canvas");
-
-const menu = document.getElementById("menu");
-const shop = document.getElementById("shop");
-const endScreen = document.getElementById("endScreen");
-
-const playButton = document.getElementById("playButton");
-const shopButton = document.getElementById("shopButton");
-const shopMenuButton = document.getElementById("shopMenuButton");
-const closeShop = document.getElementById("closeShop");
-const nextButton = document.getElementById("nextButton");
-
-const roundText = document.getElementById("round");
-const playersText = document.getElementById("players");
-const xpText = document.getElementById("xp");
-const crownText = document.getElementById("crowns");
-
-const progressBar = document.getElementById("progressBar");
-const message = document.getElementById("message");
-
-const shopXP = document.getElementById("shopXP");
-const itemsDiv = document.getElementById("items");
-
-
-// -------------------------
-// CHECK THAT HTML EXISTS
-// -------------------------
-
-if (!canvas) {
-    console.error("Canvas was not found.");
-}
-
-if (!playButton) {
-    console.error("Play button was not found.");
-}
-
-
-// -------------------------
-// 3D ENGINE
-// -------------------------
+document
+  .getElementById("game-container")
+  .appendChild(canvas);
 
 const engine = new Mini3D(canvas);
 
+const game = {
+  state: "menu",
 
-// -------------------------
-// GAME VARIABLES
-// -------------------------
+  round: 1,
 
-let gameRunning = false;
+  maxRounds: 4,
 
-let round = 1;
+  totalPlayers: 20,
 
-let playersRemaining = 20;
+  playersAlive: 20,
 
-let finishZ = 100;
+  qualified: 0,
 
-let obstacles = [];
+  timer: 0,
 
-let bots = [];
+  roundDuration: 55,
 
-let keys = {};
+  xp: Number(localStorage.getItem("beanXP") || 0),
 
+  level: Number(localStorage.getItem("beanLevel") || 1),
 
-// -------------------------
-// PLAYER
-// -------------------------
+  crowns: Number(localStorage.getItem("beanCrowns") || 0),
 
-const player = {
+  owned: JSON.parse(
+    localStorage.getItem("beanOwned") ||
+    '["default"]'
+  ),
 
+  character: JSON.parse(
+    localStorage.getItem("beanCharacter") ||
+    JSON.stringify({
+      color: "#ff4d6d",
+      face: "happy",
+      hat: "none"
+    })
+  ),
+
+  objects: [],
+
+  bots: [],
+
+  obstacles: [],
+
+  keys: {},
+
+  lastTime: performance.now(),
+
+  map: null,
+
+  player: {
     x: 0,
-
-    y: 0,
-
+    y: 1,
     z: 0,
 
     vx: 0,
-
     vy: 0,
-
     vz: 0,
 
-    speed: 0.18,
+    speed: 7,
 
-    jump: 0.32,
+    jumpPower: 10,
 
     grounded: true,
 
-    progress: 0,
+    diving: false,
 
-    color: "#19d9ff"
+    alive: true,
+
+    finished: false,
+
+    checkpoint: 0
+  }
 };
 
+/* ======================================================
+   MAPS
+====================================================== */
 
-// -------------------------
-// XP / CROWNS
-// -------------------------
+const maps = [
+  {
+    name: "ROOFTOP RUSH",
+    theme: "city",
+    type: "race",
+    length: 180,
+    color: "#40a9ff"
+  },
 
-let xp =
-    Number(localStorage.getItem("beanXP")) || 0;
+  {
+    name: "JUNGLE JAM",
+    theme: "jungle",
+    type: "race",
+    length: 190,
+    color: "#45d483"
+  },
 
-let crowns =
-    Number(localStorage.getItem("beanCrowns")) || 0;
+  {
+    name: "ICE BREAKER",
+    theme: "ice",
+    type: "survival",
+    length: 100,
+    color: "#8de7ff"
+  },
 
-let currentSkin =
-    localStorage.getItem("beanSkin") || "blue";
-
-
-// -------------------------
-// SKINS
-// -------------------------
-
-const skins = [
-
-    {
-        id: "blue",
-        name: "Blue Bean",
-        price: 0,
-        color: "#19d9ff"
-    },
-
-    {
-        id: "pink",
-        name: "Bubblegum Bean",
-        price: 500,
-        color: "#ff4fc3"
-    },
-
-    {
-        id: "green",
-        name: "Lime Bean",
-        price: 1000,
-        color: "#6cff4f"
-    },
-
-    {
-        id: "orange",
-        name: "Fire Bean",
-        price: 2500,
-        color: "#ff8c32"
-    },
-
-    {
-        id: "purple",
-        name: "Galaxy Bean",
-        price: 5000,
-        color: "#a855ff"
-    },
-
-    {
-        id: "gold",
-        name: "Golden Bean",
-        price: 15000,
-        color: "#ffd700"
-    }
-
+  {
+    name: "VOLCANO FRENZY",
+    theme: "volcano",
+    type: "race",
+    length: 210,
+    color: "#ff633d"
+  }
 ];
 
+/* ======================================================
+   SHOP
+====================================================== */
 
-// =====================================================
-// HUD
-// =====================================================
+const shopItems = [
+  {
+    id: "blue",
+    name: "Ocean Bean",
+    icon: "🔵",
+    price: 250,
+    rarity: "Common",
+    color: "#2878ff"
+  },
 
-function updateHUD() {
+  {
+    id: "green",
+    name: "Lime Bean",
+    icon: "🟢",
+    price: 400,
+    rarity: "Common",
+    color: "#43d66f"
+  },
 
-    if (roundText) {
-        roundText.textContent =
-            `Round ${round}/4`;
-    }
+  {
+    id: "yellow",
+    name: "Sun Bean",
+    icon: "🟡",
+    price: 500,
+    rarity: "Uncommon",
+    color: "#ffd43d"
+  },
 
-    if (playersText) {
-        playersText.textContent =
-            `Players: ${playersRemaining}`;
-    }
+  {
+    id: "purple",
+    name: "Galaxy Bean",
+    icon: "🟣",
+    price: 900,
+    rarity: "Rare",
+    color: "#a855f7"
+  },
 
-    if (xpText) {
-        xpText.textContent =
-            `XP: ${xp}`;
-    }
+  {
+    id: "black",
+    name: "Shadow Bean",
+    icon: "⚫",
+    price: 1300,
+    rarity: "Epic",
+    color: "#202030"
+  },
 
-    if (crownText) {
-        crownText.textContent =
-            `👑 ${crowns}`;
-    }
+  {
+    id: "dragon",
+    name: "Dragon Bean",
+    icon: "🐲",
+    price: 2500,
+    rarity: "Legendary",
+    color: "#ef4444"
+  }
+];
 
-    if (shopXP) {
-        shopXP.textContent = xp;
-    }
+/* ======================================================
+   UI
+====================================================== */
+
+const $ = id =>
+  document.getElementById(id);
+
+function show(id) {
+  $(id).classList.remove("hidden");
 }
 
+function hide(id) {
+  $(id).classList.add("hidden");
+}
 
-// =====================================================
-// XP
-// =====================================================
+function saveData() {
+  localStorage.setItem(
+    "beanXP",
+    game.xp
+  );
+
+  localStorage.setItem(
+    "beanLevel",
+    game.level
+  );
+
+  localStorage.setItem(
+    "beanCrowns",
+    game.crowns
+  );
+
+  localStorage.setItem(
+    "beanOwned",
+    JSON.stringify(game.owned)
+  );
+
+  localStorage.setItem(
+    "beanCharacter",
+    JSON.stringify(game.character)
+  );
+}
+
+function updateProfileUI() {
+  $("menuXP").textContent = game.xp;
+  $("menuLevel").textContent = game.level;
+  $("menuCrowns").textContent = game.crowns;
+  $("shopXP").textContent = game.xp;
+}
+
+function toast(message) {
+  const element = $("toast");
+
+  element.textContent = message;
+
+  element.classList.add("show");
+
+  setTimeout(() => {
+    element.classList.remove("show");
+  }, 1800);
+}
+
+/* ======================================================
+   XP / LEVELS
+====================================================== */
+
+function xpNeeded() {
+  return 500 + game.level * 250;
+}
 
 function addXP(amount) {
+  game.xp += amount;
 
-    xp += amount;
+  while (game.xp >= xpNeeded()) {
+    game.xp -= xpNeeded();
 
-    localStorage.setItem(
-        "beanXP",
-        xp
+    game.level++;
+
+    toast(
+      `LEVEL UP! You reached Level ${game.level}!`
     );
+  }
 
-    updateHUD();
+  saveData();
+  updateProfileUI();
 }
 
-
-// =====================================================
-// INPUT
-// =====================================================
-
-window.addEventListener("keydown", function(event) {
-
-    keys[event.key.toLowerCase()] = true;
-
-    if (event.code === "Space") {
-
-        event.preventDefault();
-
-        jump();
-    }
-
-});
-
-
-window.addEventListener("keyup", function(event) {
-
-    keys[event.key.toLowerCase()] = false;
-
-});
-
-
-// =====================================================
-// PLAYER MOVEMENT
-// =====================================================
-
-function updatePlayer() {
-
-    if (!gameRunning) {
-        return;
-    }
-
-    let forward = 0;
-
-    let sideways = 0;
-
-
-    // Forward
-
-    if (
-        keys["w"] ||
-        keys["arrowup"]
-    ) {
-
-        forward = 1;
-    }
-
-
-    // Backward
-
-    if (
-        keys["s"] ||
-        keys["arrowdown"]
-    ) {
-
-        forward = -1;
-    }
-
-
-    // Left
-
-    if (
-        keys["a"] ||
-        keys["arrowleft"]
-    ) {
-
-        sideways = -1;
-    }
-
-
-    // Right
-
-    if (
-        keys["d"] ||
-        keys["arrowright"]
-    ) {
-
-        sideways = 1;
-    }
-
-
-    // Movement
-
-    player.vz +=
-        forward * 0.025;
-
-    player.vx +=
-        sideways * 0.025;
-
-
-    // Friction
-
-    player.vz *= 0.88;
-
-    player.vx *= 0.80;
-
-
-    // Speed limit
-
-    player.vz =
-        Math.max(
-            -0.25,
-            Math.min(
-                0.25,
-                player.vz
-            )
-        );
-
-    player.vx =
-        Math.max(
-            -0.25,
-            Math.min(
-                0.25,
-                player.vx
-            )
-        );
-
-
-    // Position
-
-    player.z += player.vz;
-
-    player.x += player.vx;
-
-
-    // Keep player on course
-
-    player.x =
-        Math.max(
-            -7,
-            Math.min(
-                7,
-                player.x
-            )
-        );
-
-
-    // Gravity
-
-    player.y += player.vy;
-
-    player.vy -= 0.018;
-
-
-    // Ground collision
-
-    if (player.y <= 0) {
-
-        player.y = 0;
-
-        player.vy = 0;
-
-        player.grounded = true;
-    }
-
-
-    // Progress
-
-    player.progress =
-        Math.max(
-            0,
-            Math.min(
-                100,
-                (player.z / finishZ) * 100
-            )
-        );
-
-
-    if (progressBar) {
-
-        progressBar.style.width =
-            player.progress + "%";
-    }
-
-}
-
-
-// =====================================================
-// JUMP
-// =====================================================
-
-function jump() {
-
-    if (!gameRunning) {
-        return;
-    }
-
-    if (!player.grounded) {
-        return;
-    }
-
-    player.vy = player.jump;
-
-    player.grounded = false;
-}
-
-
-// =====================================================
-// CREATE BOTS
-// =====================================================
-
-function createBots() {
-
-    bots = [];
-
-
-    for (
-        let i = 0;
-        i < playersRemaining - 1;
-        i++
-    ) {
-
-        const randomSkin =
-            skins[
-                Math.floor(
-                    Math.random() *
-                    skins.length
-                )
-            ];
-
-
-        bots.push({
-
-            x:
-                Math.random() * 12 - 6,
-
-            y: 0,
-
-            z:
-                Math.random() * -10,
-
-            speed:
-                0.08 +
-                Math.random() * 0.08,
-
-            color:
-                randomSkin.color,
-
-            alive: true
-        });
-
-    }
-
-}
-
-
-// =====================================================
-// UPDATE BOTS
-// =====================================================
-
-function updateBots() {
-
-    bots.forEach(function(bot) {
-
-        if (!bot.alive) {
-            return;
-        }
-
-
-        bot.z += bot.speed;
-
-
-        bot.x +=
-            Math.sin(
-                bot.z * 0.08
-            ) * 0.015;
-
-
-        // Small random chance of falling
-
-        if (
-            Math.random() < 0.002
-        ) {
-
-            bot.alive = false;
-        }
-
-    });
-
-}
-
-
-// =====================================================
-// CREATE COURSE
-// =====================================================
-
-function createCourse() {
-
-    obstacles = [];
-
-
-    // Main course platforms
-
-    for (
-        let z = 0;
-        z < finishZ;
-        z += 10
-    ) {
-
-        let platformColor;
-
-
-        if (round === 1) {
-
-            platformColor =
-                "#43d9ff";
-
-        } else if (round === 2) {
-
-            platformColor =
-                "#ff4fc3";
-
-        } else if (round === 3) {
-
-            platformColor =
-                "#a855ff";
-
-        } else {
-
-            platformColor =
-                "#ffcc22";
-        }
-
-
-        obstacles.push({
-
-            x: 0,
-
-            y: -0.4,
-
-            z: z,
-
-            w: 16,
-
-            h: 0.5,
-
-            d: 10,
-
-            color: platformColor
-
-        });
-
-    }
-
-
-    // Spinning bars
-
-    for (
-        let z = 15;
-        z < finishZ;
-        z += 20
-    ) {
-
-        obstacles.push({
-
-            type: "spinner",
-
-            x: 0,
-
-            y: 0.6,
-
-            z: z,
-
-            color: "#ff4d4d"
-
-        });
-
-    }
-
-
-    // Blocks
-
-    for (
-        let z = 10;
-        z < finishZ;
-        z += 25
-    ) {
-
-        obstacles.push({
-
-            type: "block",
-
-            x:
-                Math.random() * 8 - 4,
-
-            y: 0,
-
-            z: z + 4,
-
-            w: 2,
-
-            h: 2,
-
-            d: 2,
-
-            color: "#ffe14d"
-
-        });
-
-    }
-
-}
-
-
-// =====================================================
-// OBSTACLE COLLISION
-// =====================================================
-
-function checkObstacles() {
-
-    obstacles.forEach(function(obstacle) {
-
-        if (!obstacle.type) {
-            return;
-        }
-
-
-        const distance =
-            Math.sqrt(
-
-                Math.pow(
-                    player.x -
-                    obstacle.x,
-                    2
-                )
-
-                +
-
-                Math.pow(
-                    player.z -
-                    obstacle.z,
-                    2
-                )
-
-            );
-
-
-        if (distance < 1.8) {
-
-            // Spinner
-
-            if (
-                obstacle.type ===
-                "spinner"
-            ) {
-
-                player.vz -= 0.15;
-
-                player.vx +=
-                    Math.random() > 0.5
-                        ? 0.12
-                        : -0.12;
-            }
-
-
-            // Block
-
-            if (
-                obstacle.type ===
-                "block"
-            ) {
-
-                player.vz = -0.15;
-            }
-
-        }
-
-    });
-
-}
-
-
-// =====================================================
-// CHECK ROUND
-// =====================================================
-
-function checkRoundEnd() {
-
-    if (!gameRunning) {
-        return;
-    }
-
-
-    // Reached finish
-
-    if (
-        player.z >= finishZ
-    ) {
-
-        qualify();
-
-        return;
-    }
-
-
-    // Fell far behind
-
-    if (
-        player.z < -15
-    ) {
-
-        eliminate();
-
-    }
-
-}
-
-
-// =====================================================
-// QUALIFY
-// =====================================================
-
-function qualify() {
-
-    gameRunning = false;
-
-
-    const reward =
-        500 * round;
-
-    addXP(reward);
-
-
-    playersRemaining =
-        Math.max(
-            2,
-            Math.floor(
-                playersRemaining *
-                0.45
-            )
-        );
-
-
-    updateHUD();
-
-
-    // Final
-
-    if (round === 4) {
-
-        winGame();
-
-        return;
-    }
-
-
-    document.getElementById(
-        "endTitle"
-    ).textContent =
-        "QUALIFIED! 🎉";
-
-
-    document.getElementById(
-        "endText"
-    ).textContent =
-        `You survived Round ${round}! +${reward} XP`;
-
-
-    nextButton.textContent =
-        "NEXT ROUND";
-
-
-    endScreen.classList.remove(
-        "hidden"
-    );
-
-}
-
-
-// =====================================================
-// ELIMINATION
-// =====================================================
-
-function eliminate() {
-
-    gameRunning = false;
-
-
-    document.getElementById(
-        "endTitle"
-    ).textContent =
-        "ELIMINATED!";
-
-
-    document.getElementById(
-        "endText"
-    ).textContent =
-        "You fell off the course. Try again!";
-
-
-    nextButton.textContent =
-        "TRY AGAIN";
-
-
-    endScreen.classList.remove(
-        "hidden"
-    );
-
-}
-
-
-// =====================================================
-// WIN
-// =====================================================
-
-function winGame() {
-
-    crowns++;
-
-
-    localStorage.setItem(
-        "beanCrowns",
-        crowns
-    );
-
-
-    addXP(5000);
-
-
-    updateHUD();
-
-
-    document.getElementById(
-        "endTitle"
-    ).textContent =
-        "👑 YOU WON! 👑";
-
-
-    document.getElementById(
-        "endText"
-    ).textContent =
-        "You conquered the final round and earned a crown! +5000 XP";
-
-
-    nextButton.textContent =
-        "PLAY AGAIN";
-
-
-    endScreen.classList.remove(
-        "hidden"
-    );
-
-}
-
-
-// =====================================================
-// START ROUND
-// =====================================================
-
-function startRound() {
-
-    console.log(
-        "Starting round:",
-        round
-    );
-
-
-    endScreen.classList.add(
-        "hidden"
-    );
-
-
-    // Reset player
-
-    player.x = 0;
-
-    player.y = 0;
-
-    player.z = 0;
-
-    player.vx = 0;
-
-    player.vy = 0;
-
-    player.vz = 0;
-
-    player.progress = 0;
-
-
-    // Set skin
-
-    const selectedSkin =
-        skins.find(
-            skin =>
-                skin.id ===
-                currentSkin
-        );
-
-
-    if (selectedSkin) {
-
-        player.color =
-            selectedSkin.color;
-
-    }
-
-
-    // Create map
-
-    createCourse();
-
-
-    // Create other players
-
-    createBots();
-
-
-    // Start game
-
-    gameRunning = true;
-
-
-    if (round === 4) {
-
-        message.textContent =
-            "👑 FINAL ROUND!";
-
-    } else {
-
-        message.textContent =
-            `ROUND ${round}`;
-    }
-
-
-    updateHUD();
-
-}
-
-
-// =====================================================
-// START ENTIRE GAME
-// =====================================================
-
-function newGame() {
-
-    console.log(
-        "Starting new game..."
-    );
-
-
-    round = 1;
-
-    playersRemaining = 20;
-
-
-    menu.classList.add(
-        "hidden"
-    );
-
-
-    startRound();
-
-}
-
-
-// =====================================================
-// PLAY BUTTON
-// =====================================================
-
-if (playButton) {
-
-    playButton.addEventListener(
-        "click",
-        function(event) {
-
-            event.preventDefault();
-
-            console.log(
-                "PLAY BUTTON CLICKED"
-            );
-
-
-            // Hide menu
-
-            menu.classList.add(
-                "hidden"
-            );
-
-
-            // Start from Round 1
-
-            round = 1;
-
-            playersRemaining = 20;
-
-
-            // Reset player
-
-            player.x = 0;
-
-            player.y = 0;
-
-            player.z = 0;
-
-            player.vx = 0;
-
-            player.vy = 0;
-
-            player.vz = 0;
-
-
-            // Build course
-
-            createCourse();
-
-
-            // Create opponents
-
-            createBots();
-
-
-            // Start game
-
-            gameRunning = true;
-
-
-            message.textContent =
-                "ROUND 1";
-
-
-            updateHUD();
-
-
-            console.log(
-                "GAME STARTED"
-            );
-
-        }
-    );
-
-}
-
-
-// =====================================================
-// NEXT ROUND BUTTON
-// =====================================================
-
-if (nextButton) {
-
-    nextButton.addEventListener(
-        "click",
-        function() {
-
-
-            // Retry
-
-            if (
-                nextButton.textContent ===
-                "TRY AGAIN"
-            ) {
-
-                startRound();
-
-                return;
-            }
-
-
-            // Play again after victory
-
-            if (
-                nextButton.textContent ===
-                "PLAY AGAIN"
-            ) {
-
-                newGame();
-
-                return;
-            }
-
-
-            // Move to next round
-
-            round++;
-
-
-            startRound();
-
-        }
-    );
-
-}
-
-
-// =====================================================
-// SHOP
-// =====================================================
-
-function renderShop() {
-
-    if (!itemsDiv) {
-        return;
-    }
-
-
-    shopXP.textContent =
-        xp;
-
-
-    itemsDiv.innerHTML = "";
-
-
-    skins.forEach(function(skin) {
-
-
-        const item =
-            document.createElement(
-                "div"
-            );
-
-
-        item.className =
-            "shopItem";
-
-
-        const owned =
-            skin.price === 0 ||
-            localStorage.getItem(
-                "skin_" + skin.id
-            ) === "true";
-
-
-        item.innerHTML = `
-
-            <div
-                class="skinPreview"
-                style="
-                    background:${skin.color};
-                "
-            ></div>
-
-            <div class="skinInfo">
-
-                <strong>
-                    ${skin.name}
-                </strong>
-
-                <span>
-                    ${
-                        owned
-                            ? "Owned"
-                            : skin.price + " XP"
-                    }
-                </span>
-
-            </div>
-
-            <button class="buyButton">
-
-                ${
-                    currentSkin === skin.id
-                        ? "EQUIPPED"
-                        : owned
-                            ? "EQUIP"
-                            : "BUY"
-                }
-
-            </button>
-
-        `;
-
-
-        const button =
-            item.querySelector(
-                ".buyButton"
-            );
-
-
-        button.addEventListener(
-            "click",
-            function() {
-
-
-                // Already owned
-
-                if (owned) {
-
-                    currentSkin =
-                        skin.id;
-
-
-                    localStorage.setItem(
-                        "beanSkin",
-                        currentSkin
-                    );
-
-
-                    player.color =
-                        skin.color;
-
-
-                    renderShop();
-
-                    return;
-                }
-
-
-                // Buy
-
-                if (
-                    xp >= skin.price
-                ) {
-
-                    xp -=
-                        skin.price;
-
-
-                    localStorage.setItem(
-                        "beanXP",
-                        xp
-                    );
-
-
-                    localStorage.setItem(
-                        "skin_" +
-                        skin.id,
-                        "true"
-                    );
-
-
-                    currentSkin =
-                        skin.id;
-
-
-                    localStorage.setItem(
-                        "beanSkin",
-                        currentSkin
-                    );
-
-
-                    player.color =
-                        skin.color;
-
-
-                    updateHUD();
-
-                    renderShop();
-
-                } else {
-
-                    alert(
-                        "You don't have enough XP!"
-                    );
-
-                }
-
-            }
-        );
-
-
-        itemsDiv.appendChild(
-            item
-        );
-
-    });
-
-}
-
-
-// =====================================================
-// OPEN SHOP
-// =====================================================
+/* ======================================================
+   SHOP
+====================================================== */
 
 function openShop() {
+  hide("menu");
+  show("shop");
 
-    renderShop();
-
-
-    shop.classList.remove(
-        "hidden"
-    );
-
+  renderShop();
 }
 
+function renderShop() {
+  $("shopXP").textContent = game.xp;
 
-// =====================================================
-// SHOP BUTTONS
-// =====================================================
+  $("shopItems").innerHTML = "";
 
-if (shopButton) {
+  for (const item of shopItems) {
+    const owned =
+      game.owned.includes(item.id);
 
-    shopButton.addEventListener(
+    const card =
+      document.createElement("div");
+
+    card.className = "shop-item";
+
+    card.innerHTML = `
+      <div class="shop-icon">
+        ${item.icon}
+      </div>
+
+      <h3>${item.name}</h3>
+
+      <div class="rarity">
+        ${item.rarity}
+      </div>
+
+      <div class="price">
+        ⭐ ${item.price} XP
+      </div>
+
+      <button
+        data-id="${item.id}"
+        class="${owned ? "owned" : ""}"
+      >
+        ${owned ? "OWNED" : "BUY"}
+      </button>
+    `;
+
+    card
+      .querySelector("button")
+      .addEventListener(
         "click",
-        openShop
-    );
+        () => buyItem(item)
+      );
 
+    $("shopItems").appendChild(card);
+  }
 }
 
+function buyItem(item) {
+  if (game.owned.includes(item.id)) {
+    toast("You already own this item!");
 
-if (shopMenuButton) {
+    return;
+  }
 
-    shopMenuButton.addEventListener(
-        "click",
-        openShop
-    );
+  if (game.xp < item.price) {
+    toast("Not enough XP!");
 
+    return;
+  }
+
+  game.xp -= item.price;
+
+  game.owned.push(item.id);
+
+  saveData();
+
+  renderShop();
+
+  updateProfileUI();
+
+  toast(
+    `${item.name} unlocked!`
+  );
 }
 
+/* ======================================================
+   CUSTOMIZATION
+====================================================== */
 
-if (closeShop) {
+const colors = [
+  "#ff4d6d",
+  "#2878ff",
+  "#43d66f",
+  "#ffd43d",
+  "#a855f7",
+  "#ff7a18",
+  "#28d7d0",
+  "#202030"
+];
 
-    closeShop.addEventListener(
-        "click",
-        function() {
+function openCustomization() {
+  hide("menu");
+  show("customization");
 
-            shop.classList.add(
-                "hidden"
-            );
-
-        }
-    );
-
+  renderCustomization();
 }
 
+function renderCustomization() {
+  const container =
+    $("colorOptions");
 
-// =====================================================
-// DRAW WORLD
-// =====================================================
+  container.innerHTML = "";
 
-function drawWorld() {
+  colors.forEach(color => {
+    const button =
+      document.createElement("button");
 
-    engine.clear(
-        "#75dcff"
-    );
+    button.className =
+      "color-btn";
 
+    button.style.background =
+      color;
 
-    // -------------------------
-    // Clouds
-    // -------------------------
-
-    for (
-        let i = 0;
-        i < 10;
-        i++
+    if (
+      game.character.color === color
     ) {
+      button.classList.add("selected");
+    }
 
-        const x =
-            Math.sin(i * 10) * 20;
+    button.addEventListener(
+      "click",
+      () => {
+        game.character.color = color;
 
-        const z =
-            20 + i * 25;
+        renderCustomization();
+      }
+    );
 
+    container.appendChild(button);
+  });
 
-        const p =
-            engine.project(
-                x,
-                8,
-                z
-            );
+  document.querySelectorAll(
+    ".face-options button"
+  ).forEach(button => {
+    button.onclick = () => {
+      game.character.face =
+        button.dataset.face;
+    };
+  });
 
+  document.querySelectorAll(
+    ".hat-options button"
+  ).forEach(button => {
+    button.onclick = () => {
+      game.character.hat =
+        button.dataset.hat;
+    };
+  });
 
-        if (!p) {
-            continue;
+  const preview =
+    $("previewBean");
+
+  preview.style.background =
+    game.character.color;
+
+  let face = "●ᴗ●";
+
+  if (game.character.face === "cool")
+    face = "⌐■_■";
+
+  if (game.character.face === "surprised")
+    face = "●o●";
+
+  if (game.character.face === "sleepy")
+    face = "-ᴗ-";
+
+  preview.innerHTML =
+    `<span>${face}</span>`;
+
+  preview.style.display = "flex";
+  preview.style.alignItems = "center";
+  preview.style.justifyContent = "center";
+  preview.style.color = "white";
+  preview.style.fontSize = "25px";
+}
+
+$("saveCustom").onclick = () => {
+  saveData();
+
+  toast("Character saved!");
+
+  hide("customization");
+
+  show("menu");
+};
+
+/* ======================================================
+   INPUT
+====================================================== */
+
+window.addEventListener(
+  "keydown",
+  event => {
+    game.keys[
+      event.key.toLowerCase()
+    ] = true;
+
+    if (
+      [
+        " ",
+        "arrowup",
+        "arrowdown",
+        "arrowleft",
+        "arrowright"
+      ].includes(
+        event.key.toLowerCase()
+      )
+    ) {
+      event.preventDefault();
+    }
+
+    if (
+      game.state === "playing" &&
+      event.key === " "
+    ) {
+      jump();
+    }
+
+    if (
+      game.state === "playing" &&
+      event.key.toLowerCase() === "shift"
+    ) {
+      dive();
+    }
+  }
+);
+
+window.addEventListener(
+  "keyup",
+  event => {
+    game.keys[
+      event.key.toLowerCase()
+    ] = false;
+  }
+);
+
+/* ======================================================
+   PLAYER
+====================================================== */
+
+function jump() {
+  const player = game.player;
+
+  if (
+    !player.grounded ||
+    !player.alive
+  ) {
+    return;
+  }
+
+  player.vy =
+    player.jumpPower;
+
+  player.grounded = false;
+}
+
+function dive() {
+  const player = game.player;
+
+  if (!player.alive) return;
+
+  player.diving = true;
+
+  player.vz += 8;
+
+  setTimeout(() => {
+    player.diving = false;
+  }, 450);
+}
+
+/* ======================================================
+   START MATCH
+====================================================== */
+
+function startGame(practice = false) {
+  game.state = "playing";
+
+  game.round = 1;
+
+  game.totalPlayers =
+    practice ? 1 : 20;
+
+  game.playersAlive =
+    game.totalPlayers;
+
+  game.qualified = 0;
+
+  hide("menu");
+  hide("shop");
+  hide("customization");
+  hide("resultScreen");
+  hide("winnerScreen");
+
+  show("hud");
+
+  startRound();
+}
+
+function startRound() {
+  game.timer = 0;
+
+  game.player = {
+    x: 0,
+    y: 1,
+    z: 0,
+
+    vx: 0,
+    vy: 0,
+    vz: 0,
+
+    speed:
+      game.round === 1 ? 7 :
+      game.round === 2 ? 7.3 :
+      game.round === 3 ? 7.7 :
+      8.2,
+
+    jumpPower: 10,
+
+    grounded: true,
+
+    diving: false,
+
+    alive: true,
+
+    finished: false,
+
+    checkpoint: 0
+  };
+
+  game.map =
+    maps[game.round - 1];
+
+  buildMap();
+
+  createBots();
+
+  updateHUD();
+
+  showRoundIntro();
+}
+
+function showRoundIntro() {
+  $("roundMessage").textContent =
+    `ROUND ${game.round}`;
+
+  setTimeout(() => {
+    if (game.state === "playing") {
+      $("roundMessage").textContent =
+        "GO!";
+    }
+  }, 1800);
+
+  setTimeout(() => {
+    if (game.state === "playing") {
+      $("roundMessage").textContent = "";
+    }
+  }, 3200);
+}
+
+/* ======================================================
+   MAP CREATION
+====================================================== */
+
+function buildMap() {
+  game.objects = [];
+  game.obstacles = [];
+
+  const map = game.map;
+
+  // Main course
+  game.objects.push({
+    type: "box",
+    x: 0,
+    y: -1,
+    z: map.length / 2,
+    w: 24,
+    h: 1,
+    d: map.length,
+    color: getGroundColor()
+  });
+
+  // Side walls
+  game.objects.push({
+    type: "box",
+    x: -13,
+    y: 0,
+    z: map.length / 2,
+    w: 1,
+    h: 3,
+    d: map.length,
+    color: "#34405c"
+  });
+
+  game.objects.push({
+    type: "box",
+    x: 13,
+    y: 0,
+    z: map.length / 2,
+    w: 1,
+    h: 3,
+    d: map.length,
+    color: "#34405c"
+  });
+
+  // Starting platform
+  game.objects.push({
+    type: "box",
+    x: 0,
+    y: 0,
+    z: -5,
+    w: 24,
+    h: 1,
+    d: 8,
+    color: "#6b7280"
+  });
+
+  if (map.type === "survival") {
+    buildSurvivalMap();
+  } else {
+    buildRaceMap();
+  }
+
+  buildFinish();
+}
+
+function getGroundColor() {
+  switch (game.map.theme) {
+    case "jungle":
+      return "#49b86e";
+
+    case "ice":
+      return "#8de7ff";
+
+    case "volcano":
+      return "#7d3c35";
+
+    default:
+      return "#576a91";
+  }
+}
+
+function buildRaceMap() {
+  const length =
+    game.map.length;
+
+  const difficulty =
+    game.round;
+
+  // Moving bars
+  for (
+    let z = 18;
+    z < length - 15;
+    z += 28
+  ) {
+    game.obstacles.push({
+      type: "spinner",
+      x: 0,
+      y: 1.5,
+      z,
+      length: 11,
+      speed:
+        1.5 + difficulty * .35
+    });
+  }
+
+  // Bumpers
+  for (
+    let z = 30;
+    z < length - 10;
+    z += 35
+  ) {
+    game.obstacles.push({
+      type: "bumper",
+      x: z % 2 === 0 ? -5 : 5,
+      y: 1,
+      z,
+      radius: 1.5,
+      speed: 2
+    });
+  }
+
+  // Walls
+  for (
+    let z = 42;
+    z < length - 15;
+    z += 45
+  ) {
+    game.obstacles.push({
+      type: "wall",
+      x: 0,
+      y: 0,
+      z,
+      w: 10,
+      h: 3,
+      gap: 4
+    });
+  }
+
+  // Jump blocks
+  for (
+    let z = 22;
+    z < length - 20;
+    z += 50
+  ) {
+    game.objects.push({
+      type: "box",
+      x: 0,
+      y: 0,
+      z,
+      w: 5,
+      h: 1.2,
+      d: 4,
+      color: "#ffcf33"
+    });
+  }
+
+  // Bouncy pads
+  for (
+    let z = 35;
+    z < length - 20;
+    z += 55
+  ) {
+    game.objects.push({
+      type: "box",
+      x: 7,
+      y: 0,
+      z,
+      w: 4,
+      h: .4,
+      d: 4,
+      color: "#ff54bd",
+      bounce: true
+    });
+  }
+}
+
+function buildSurvivalMap() {
+  for (
+    let z = 15;
+    z < 90;
+    z += 18
+  ) {
+    game.obstacles.push({
+      type: "spinner",
+      x: 0,
+      y: 1.2,
+      z,
+      length: 10,
+      speed: 1.5
+    });
+  }
+
+  for (
+    let i = 0;
+    i < 12;
+    i++
+  ) {
+    game.objects.push({
+      type: "box",
+      x: (i % 2 === 0 ? -5 : 5),
+      y: 0,
+      z: 12 + i * 7,
+      w: 5,
+      h: .5,
+      d: 5,
+      color: "#fff"
+    });
+  }
+}
+
+function buildFinish() {
+  const z =
+    game.map.length - 5;
+
+  game.objects.push({
+    type: "box",
+    x: 0,
+    y: 0,
+    z,
+    w: 24,
+    h: .2,
+    d: 2,
+    color: "#ffffff"
+  });
+
+  for (let x = -9; x <= 9; x += 3) {
+    game.objects.push({
+      type: "box",
+      x,
+      y: .2,
+      z: z - .5,
+      w: 3,
+      h: .05,
+      d: 1,
+      color:
+        Math.round((x + 9) / 3) % 2 === 0
+          ? "#111"
+          : "#fff"
+    });
+  }
+}
+
+/* ======================================================
+   BOTS
+====================================================== */
+
+function createBots() {
+  game.bots = [];
+
+  if (game.totalPlayers <= 1)
+    return;
+
+  for (
+    let i = 0;
+    i < game.totalPlayers - 1;
+    i++
+  ) {
+    game.bots.push({
+      x:
+        ((i % 8) - 3.5) * 2.5,
+
+      y: 1,
+
+      z:
+        -i * 1.4,
+
+      speed:
+        5.5 +
+        Math.random() * 2.3 +
+        game.round * .2,
+
+      color:
+        colors[
+          i % colors.length
+        ],
+
+      alive: true,
+
+      finished: false,
+
+      wobble:
+        Math.random() * 10
+    });
+  }
+}
+
+/* ======================================================
+   OBSTACLE LOGIC
+====================================================== */
+
+function updateObstacles(dt) {
+  for (const obstacle of game.obstacles) {
+    if (
+      obstacle.type === "spinner"
+    ) {
+      obstacle.angle =
+        (obstacle.angle || 0) +
+        obstacle.speed * dt;
+    }
+
+    if (
+      obstacle.type === "bumper"
+    ) {
+      obstacle.x =
+        obstacle.x +
+        Math.sin(
+          game.timer * obstacle.speed
+        ) * dt * 4;
+    }
+
+    if (
+      obstacle.type === "wall"
+    ) {
+      obstacle.gapX =
+        Math.sin(game.timer * .8) *
+        5;
+    }
+  }
+}
+
+function checkObstacles() {
+  const p = game.player;
+
+  for (const o of game.obstacles) {
+    if (
+      o.type === "spinner"
+    ) {
+      const dz =
+        Math.abs(p.z - o.z);
+
+      if (dz < 2) {
+        const angle =
+          o.angle || 0;
+
+        const barX =
+          Math.cos(angle) *
+          o.length;
+
+        const barZ =
+          o.z +
+          Math.sin(angle) *
+          o.length;
+
+        const dx =
+          p.x - barX * .35;
+
+        const distance =
+          Math.sqrt(
+            dx * dx +
+            (p.z - barZ * .35) *
+            (p.z - barZ * .35)
+          );
+
+        if (
+          distance < 2 &&
+          p.y < 3
+        ) {
+          p.vx +=
+            Math.cos(angle) * 5;
+
+          p.vz +=
+            Math.sin(angle) * 5;
+
+          p.vy = 5;
         }
+      }
+    }
 
+    if (
+      o.type === "bumper"
+    ) {
+      const dx =
+        p.x - o.x;
 
-        engine.ctx.beginPath();
+      const dz =
+        p.z - o.z;
 
+      const distance =
+        Math.sqrt(
+          dx * dx + dz * dz
+        );
 
-        engine.ctx.arc(
-            p.x,
-            p.y,
-            30,
+      if (
+        distance <
+        o.radius + .8
+      ) {
+        const push =
+          new Vec3(
+            dx,
             0,
-            Math.PI * 2
-        );
+            dz
+          ).normalize();
 
-
-        engine.ctx.fillStyle =
-            "rgba(255,255,255,.7)";
-
-
-        engine.ctx.fill();
-
+        p.vx += push.x * 8;
+        p.vz += push.z * 8;
+        p.vy = 4;
+      }
     }
 
-
-    // -------------------------
-    // Course
-    // -------------------------
-
-    obstacles.forEach(
-        function(obstacle) {
-
-            if (!obstacle.type) {
-
-                engine.cube(
-
-                    obstacle.x,
-
-                    obstacle.y,
-
-                    obstacle.z,
-
-                    obstacle.w,
-
-                    obstacle.h,
-
-                    obstacle.d,
-
-                    obstacle.color
-
-                );
-
-            }
-
-        }
-    );
-
-
-    // -------------------------
-    // Obstacles
-    // -------------------------
-
-    obstacles.forEach(
-        function(obstacle) {
-
-
-            // Block
-
-            if (
-                obstacle.type ===
-                "block"
-            ) {
-
-                engine.cube(
-
-                    obstacle.x,
-
-                    obstacle.y,
-
-                    obstacle.z,
-
-                    obstacle.w,
-
-                    obstacle.h,
-
-                    obstacle.d,
-
-                    obstacle.color
-
-                );
-
-            }
-
-
-            // Spinner
-
-            if (
-                obstacle.type ===
-                "spinner"
-            ) {
-
-                const angle =
-                    performance.now() *
-                    0.003;
-
-
-                const x =
-                    obstacle.x +
-                    Math.cos(angle) * 3;
-
-
-                const z =
-                    obstacle.z +
-                    Math.sin(angle) * 3;
-
-
-                engine.cube(
-
-                    x,
-
-                    obstacle.y,
-
-                    z,
-
-                    5,
-
-                    0.5,
-
-                    0.5,
-
-                    obstacle.color
-
-                );
-
-            }
-
-        }
-    );
-
-
-    // -------------------------
-    // Finish Line
-    // -------------------------
-
-    for (
-        let x = -8;
-        x <= 8;
-        x += 2
+    if (
+      o.type === "wall"
     ) {
+      const dz =
+        Math.abs(p.z - o.z);
 
-        engine.cube(
-
-            x,
-
-            0.1,
-
-            finishZ,
-
-            2,
-
-            0.2,
-
-            2,
-
-            x % 4 === 0
-                ? "#ffffff"
-                : "#222222"
-
-        );
-
+      if (
+        dz < 1.5 &&
+        Math.abs(
+          p.x - (o.gapX || 0)
+        ) > o.gap / 2
+      ) {
+        p.vz *= -.4;
+        p.x +=
+          p.x > 0 ? -1 : 1;
+      }
     }
-
-
-    // -------------------------
-    // Bots
-    // -------------------------
-
-    bots.forEach(
-        function(bot) {
-
-            if (!bot.alive) {
-                return;
-            }
-
-
-            engine.sphere(
-
-                bot.x,
-
-                0.9,
-
-                bot.z,
-
-                0.65,
-
-                bot.color
-
-            );
-
-
-            engine.sphere(
-
-                bot.x,
-
-                1.55,
-
-                bot.z,
-
-                0.55,
-
-                bot.color
-
-            );
-
-        }
-    );
-
-
-    // -------------------------
-    // Player Body
-    // -------------------------
-
-    engine.sphere(
-
-        player.x,
-
-        0.9 + player.y,
-
-        player.z,
-
-        0.7,
-
-        player.color
-
-    );
-
-
-    // Player head
-
-    engine.sphere(
-
-        player.x,
-
-        1.55 + player.y,
-
-        player.z,
-
-        0.55,
-
-        player.color
-
-    );
-
-
-    // -------------------------
-    // Eyes
-    // -------------------------
-
-    const eyeOffset = 0.22;
-
-
-    engine.sphere(
-
-        player.x -
-        eyeOffset,
-
-        1.7 + player.y,
-
-        player.z - 0.45,
-
-        0.09,
-
-        "#111111"
-
-    );
-
-
-    engine.sphere(
-
-        player.x +
-        eyeOffset,
-
-        1.7 + player.y,
-
-        player.z - 0.45,
-
-        0.09,
-
-        "#111111"
-
-    );
-
+  }
 }
 
+/* ======================================================
+   PLAYER UPDATE
+====================================================== */
 
-// =====================================================
-// CAMERA
-// =====================================================
+function updatePlayer(dt) {
+  const p = game.player;
+
+  if (!p.alive)
+    return;
+
+  let moveX = 0;
+  let moveZ = 0;
+
+  if (
+    game.keys["a"] ||
+    game.keys["arrowleft"]
+  ) {
+    moveX -= 1;
+  }
+
+  if (
+    game.keys["d"] ||
+    game.keys["arrowright"]
+  ) {
+    moveX += 1;
+  }
+
+  if (
+    game.keys["w"] ||
+    game.keys["arrowup"]
+  ) {
+    moveZ += 1;
+  }
+
+  if (
+    game.keys["s"] ||
+    game.keys["arrowdown"]
+  ) {
+    moveZ -= 1;
+  }
+
+  const length =
+    Math.sqrt(
+      moveX * moveX +
+      moveZ * moveZ
+    ) || 1;
+
+  moveX /= length;
+  moveZ /= length;
+
+  const acceleration = 20;
+
+  p.vx +=
+    moveX *
+    acceleration *
+    dt;
+
+  p.vz +=
+    moveZ *
+    acceleration *
+    dt;
+
+  const maxSpeed =
+    p.speed;
+
+  const horizontalSpeed =
+    Math.sqrt(
+      p.vx * p.vx +
+      p.vz * p.vz
+    );
+
+  if (
+    horizontalSpeed >
+    maxSpeed
+  ) {
+    const scale =
+      maxSpeed /
+      horizontalSpeed;
+
+    p.vx *= scale;
+    p.vz *= scale;
+  }
+
+  p.vx *=
+    Math.pow(.0005, dt);
+
+  p.vz *=
+    Math.pow(.0005, dt);
+
+  p.vy -=
+    25 * dt;
+
+  p.x +=
+    p.vx * dt;
+
+  p.y +=
+    p.vy * dt;
+
+  p.z +=
+    p.vz * dt;
+
+  if (
+    p.y <= 1
+  ) {
+    p.y = 1;
+    p.vy = 0;
+    p.grounded = true;
+  }
+
+  if (
+    Math.abs(p.x) >
+    11.3
+  ) {
+    p.x =
+      Math.sign(p.x) *
+      11.3;
+
+    p.vx *= -.4;
+  }
+
+  // Bouncy objects
+  for (const o of game.objects) {
+    if (
+      o.bounce &&
+      Math.abs(p.x - o.x) < o.w / 2 &&
+      Math.abs(p.z - o.z) < o.d / 2 &&
+      p.y <= 1.5
+    ) {
+      p.vy = 14;
+      p.grounded = false;
+    }
+  }
+
+  checkObstacles();
+
+  if (
+    p.y < -5
+  ) {
+    respawnPlayer();
+  }
+
+  if (
+    p.z >=
+    game.map.length - 8
+  ) {
+    p.finished = true;
+
+    finishPlayer();
+  }
+}
+
+function respawnPlayer() {
+  game.player.x = 0;
+  game.player.y = 1;
+  game.player.z =
+    Math.max(
+      0,
+      game.player.checkpoint
+    );
+
+  game.player.vx = 0;
+  game.player.vy = 0;
+  game.player.vz = 0;
+
+  toast("Checkpoint!");
+}
+
+/* ======================================================
+   FINISHING
+====================================================== */
+
+function finishPlayer() {
+  if (
+    game.player.finished &&
+    game.state !== "playing"
+  ) {
+    return;
+  }
+
+  game.player.finished = true;
+
+  if (
+    game.round < 4
+  ) {
+    qualifyRound();
+  } else {
+    winGame();
+  }
+}
+
+function qualifyRound() {
+  if (
+    game.state !== "playing"
+  ) {
+    return;
+  }
+
+  game.state = "roundResult";
+
+  let nextPlayers;
+
+  if (game.round === 1)
+    nextPlayers = 14;
+
+  else if (game.round === 2)
+    nextPlayers = 9;
+
+  else
+    nextPlayers = 4;
+
+  if (
+    game.totalPlayers === 1
+  ) {
+    nextPlayers = 1;
+  }
+
+  game.playersAlive =
+    nextPlayers;
+
+  const reward =
+    game.round * 150;
+
+  addXP(reward);
+
+  $("resultIcon").textContent =
+    "🏃";
+
+  $("resultTitle").textContent =
+    "QUALIFIED!";
+
+  $("resultDescription").textContent =
+    `You survived Round ${game.round} and made it to the next round!`;
+
+  $("resultXP").textContent =
+    `+${reward}`;
+
+  $("resultPlayers").textContent =
+    nextPlayers;
+
+  hide("hud");
+  show("resultScreen");
+}
+
+function eliminatePlayer() {
+  if (
+    game.state !== "playing"
+  )
+    return;
+
+  game.state =
+    "roundResult";
+
+  $("resultIcon").textContent =
+    "💥";
+
+  $("resultTitle").textContent =
+    "ELIMINATED!";
+
+  $("resultDescription").textContent =
+    "You didn't qualify this time. Try again!";
+
+  $("resultXP").textContent =
+    "+50";
+
+  $("resultPlayers").textContent =
+    game.playersAlive;
+
+  addXP(50);
+
+  hide("hud");
+  show("resultScreen");
+}
+
+function nextRound() {
+  if (
+    game.round >= 4
+  ) {
+    winGame();
+
+    return;
+  }
+
+  game.round++;
+
+  game.state =
+    "playing";
+
+  hide("resultScreen");
+
+  show("hud");
+
+  startRound();
+}
+
+/* ======================================================
+   FINAL
+====================================================== */
+
+function winGame() {
+  game.state = "winner";
+
+  game.crowns++;
+
+  addXP(1000);
+
+  saveData();
+
+  hide("hud");
+  hide("resultScreen");
+
+  show("winnerScreen");
+
+  updateProfileUI();
+}
+
+/* ======================================================
+   BOT UPDATE
+====================================================== */
+
+function updateBots(dt) {
+  for (const bot of game.bots) {
+    if (!bot.alive)
+      continue;
+
+    bot.z +=
+      bot.speed * dt;
+
+    bot.x +=
+      Math.sin(
+        game.timer * 2 +
+        bot.wobble
+      ) *
+      dt *
+      1.2;
+
+    if (
+      Math.random() <
+      dt * .15
+    ) {
+      bot.x +=
+        (Math.random() - .5) * 3;
+    }
+
+    if (
+      bot.z >
+      game.map.length - 8
+    ) {
+      bot.finished = true;
+    }
+
+    if (
+      bot.z >
+      game.map.length + 5
+    ) {
+      bot.alive = false;
+    }
+  }
+}
+
+/* ======================================================
+   HUD
+====================================================== */
+
+function updateHUD() {
+  $("roundText").textContent =
+    `${game.round} / 4`;
+
+  $("mapName").textContent =
+    game.map.name;
+
+  $("qualifiedText").textContent =
+    `${game.qualified} / ${game.playersAlive}`;
+}
+
+function updateTimer() {
+  const seconds =
+    Math.max(
+      0,
+      Math.ceil(
+        game.roundDuration -
+        game.timer
+      )
+    );
+
+  const minutes =
+    Math.floor(seconds / 60);
+
+  const remaining =
+    seconds % 60;
+
+  $("timer").textContent =
+    `${String(minutes).padStart(2, "0")}:${String(remaining).padStart(2, "0")}`;
+}
+
+/* ======================================================
+   CAMERA
+====================================================== */
 
 function updateCamera() {
+  const p = game.player;
 
-    engine.camera.x +=
-        (
-            player.x -
-            engine.camera.x
-        ) * 0.08;
+  engine.camera.position.x =
+    p.x * .45;
 
+  engine.camera.position.y =
+    7 + p.y * .15;
 
-    engine.camera.y = 6;
+  engine.camera.position.z =
+    p.z - 15;
 
+  engine.camera.target.x =
+    p.x * .15;
 
-    engine.camera.z =
-        player.z - 12;
+  engine.camera.target.y =
+    1;
 
+  engine.camera.target.z =
+    p.z + 15;
 }
 
+/* ======================================================
+   DRAW WORLD
+====================================================== */
 
-// =====================================================
-// GAME LOOP
-// =====================================================
+function drawWorld() {
+  drawSky();
 
-function gameLoop() {
+  drawObjects();
 
-    updatePlayer();
+  drawObstacles();
 
-    updateBots();
+  drawBots();
 
-    checkObstacles();
+  drawPlayer();
+}
 
-    checkRoundEnd();
+function drawSky() {
+  let top = "#75c8ff";
+  let bottom = "#d7f4ff";
 
-    updateCamera();
+  if (game.map.theme === "volcano") {
+    top = "#32131c";
+    bottom = "#e35b32";
+  }
 
-    drawWorld();
+  if (game.map.theme === "jungle") {
+    top = "#63d8ff";
+    bottom = "#b7f5d0";
+  }
 
+  if (game.map.theme === "ice") {
+    top = "#4bb9ff";
+    bottom = "#e9ffff";
+  }
 
-    requestAnimationFrame(
-        gameLoop
+  const gradient =
+    engine.ctx.createLinearGradient(
+      0,
+      0,
+      0,
+      engine.height
     );
 
+  gradient.addColorStop(
+    0,
+    top
+  );
+
+  gradient.addColorStop(
+    1,
+    bottom
+  );
+
+  engine.ctx.fillStyle =
+    gradient;
+
+  engine.ctx.fillRect(
+    0,
+    0,
+    engine.width,
+    engine.height
+  );
 }
 
+function drawObjects() {
+  const sorted =
+    [...game.objects]
+      .sort(
+        (a, b) =>
+          b.z - a.z
+      );
 
-// =====================================================
-// INITIALIZE
-// =====================================================
+  for (const o of sorted) {
+    if (o.type !== "box")
+      continue;
 
-const initialSkin =
-    skins.find(
-        skin =>
-            skin.id ===
-            currentSkin
+    engine.box(
+      o.x,
+      o.y,
+      o.z,
+      o.w,
+      o.h,
+      o.d,
+      o.color
+    );
+  }
+}
+
+function drawObstacles() {
+  for (const o of game.obstacles) {
+    if (
+      o.type === "spinner"
+    ) {
+      const angle =
+        o.angle || 0;
+
+      const x1 =
+        o.x +
+        Math.cos(angle) *
+        o.length;
+
+      const z1 =
+        o.z +
+        Math.sin(angle) *
+        o.length;
+
+      const x2 =
+        o.x -
+        Math.cos(angle) *
+        o.length;
+
+      const z2 =
+        o.z -
+        Math.sin(angle) *
+        o.length;
+
+      drawBeam(
+        o.x,
+        o.y,
+        o.z,
+        x1,
+        o.y,
+        z1,
+        "#ff4d6d"
+      );
+
+      drawBeam(
+        o.x,
+        o.y,
+        o.z,
+        x2,
+        o.y,
+        z2,
+        "#ffcc33"
+      );
+
+      engine.sphere(
+        o.x,
+        o.y,
+        o.z,
+        1.1,
+        "#fff"
+      );
+    }
+
+    if (
+      o.type === "bumper"
+    ) {
+      engine.sphere(
+        o.x,
+        o.y,
+        o.z,
+        o.radius,
+        "#ff4d6d"
+      );
+    }
+
+    if (
+      o.type === "wall"
+    ) {
+      const gap =
+        o.gapX || 0;
+
+      const leftWidth =
+        gap - o.gap / 2 + 11;
+
+      const rightWidth =
+        11 - gap - o.gap / 2;
+
+      if (leftWidth > 0) {
+        engine.box(
+          -11 + leftWidth / 2,
+          o.y,
+          o.z,
+          leftWidth,
+          o.h,
+          2,
+          "#a855f7"
+        );
+      }
+
+      if (rightWidth > 0) {
+        engine.box(
+          11 - rightWidth / 2,
+          o.y,
+          o.z,
+          rightWidth,
+          o.h,
+          2,
+          "#a855f7"
+        );
+      }
+    }
+  }
+}
+
+function drawBeam(
+  x1,
+  y1,
+  z1,
+  x2,
+  y2,
+  z2,
+  color
+) {
+  const midX =
+    (x1 + x2) / 2;
+
+  const midY =
+    (y1 + y2) / 2;
+
+  const midZ =
+    (z1 + z2) / 2;
+
+  const length =
+    Math.sqrt(
+      (x2 - x1) ** 2 +
+      (z2 - z1) ** 2
     );
 
-
-if (initialSkin) {
-
-    player.color =
-        initialSkin.color;
-
+  engine.box(
+    midX,
+    midY - .3,
+    midZ,
+    length,
+    .6,
+    .7,
+    color
+  );
 }
 
+/* ======================================================
+   DRAW BOTS
+====================================================== */
 
-updateHUD();
+function drawBots() {
+  for (const bot of game.bots) {
+    if (!bot.alive)
+      continue;
 
+    drawBean(
+      bot.x,
+      bot.y,
+      bot.z,
+      bot.color,
+      "happy",
+      "none"
+    );
+  }
+}
 
-// Start rendering immediately
+/* ======================================================
+   DRAW PLAYER
+====================================================== */
 
-gameLoop();
+function drawPlayer() {
+  const p =
+    game.player;
 
+  drawBean(
+    p.x,
+    p.y,
+    p.z,
+    p.color ||
+      game.character.color,
+    game.character.face,
+    game.character.hat
+  );
+}
 
-console.log(
-    "Bean Rush loaded successfully!"
-);
+function drawBean(
+  x,
+  y,
+  z,
+  color,
+  face,
+  hat
+) {
+  // Body
+  engine.sphere(
+    x,
+    y + .7,
+    z,
+    .9,
+    color
+  );
+
+  // Head
+  engine.sphere(
+    x,
+    y + 1.35,
+    z,
+    .8,
+    color
+  );
+
+  // Eyes
+  engine.sphere(
+    x - .27,
+    y + 1.55,
+    z - .7,
+    .13,
+    "#111"
+  );
+
+  engine.sphere(
+    x + .27,
+    y + 1.55,
+    z - .7,
+    .13,
+    "#111"
+  );
+
+  // Face variations
+  if (face === "surprised") {
+    engine.sphere(
+      x,
+      y + 1.28,
+      z - .75,
+      .16,
+      "#111"
+    );
+  }
+
+  if (face === "cool") {
+    engine.box(
+      x,
+      y + 1.58,
+      z - .76,
+      .9,
+      .18,
+      .12,
+      "#111"
+    );
+  }
+
+  if (face === "sleepy") {
+    engine.box(
+      x,
+      y + 1.53,
+      z - .75,
+      .7,
+      .07,
+      .1,
+      "#111"
+    );
+  }
+
+  // Hat
+  if (hat === "cap") {
+    engine.box(
+      x,
+      y + 2.05,
+      z,
+      1.1,
+      .3,
+      1,
+      "#2878ff"
+    );
+  }
+
+  if (hat === "crown") {
+    engine.text3D(
+      "👑",
+      x,
+      y + 2.5,
+      z,
+      22
+    );
+  }
+
+  if (hat === "helmet") {
+    engine.sphere(
+      x,
+      y + 1.95,
+      z,
+      .9,
+      "#ffd43d"
+    );
+  }
+
+  if (hat === "cowboy") {
+    engine.box(
+      x,
+      y + 2.0,
+      z,
+      1.5,
+      .2,
+      1.2,
+      "#8b5a2b"
+    );
+  }
+}
+
+/* ======================================================
+   GAME LOOP
+====================================================== */
+
+function update(dt) {
+  if (
+    game.state !== "playing"
+  ) {
+    return;
+  }
+
+  game.timer += dt;
+
+  updatePlayer(dt);
+
+  updateBots(dt);
+
+  updateObstacles(dt);
+
+  updateCamera();
+
+  updateTimer();
+
+  updateHUD();
+
+  // Survival elimination
+  if (
+    game.map.type === "survival" &&
+    game.timer >=
+    game.roundDuration
+  ) {
+    qualifyRound();
+
+    return;
+  }
+
+  // Race timeout
+  if (
+    game.map.type === "race" &&
+    game.timer >=
+    game.roundDuration
+  ) {
+    eliminatePlayer();
+
+    return;
+  }
+}
+
+function render() {
+  drawWorld();
+}
+
+function loop(now) {
+  const dt =
+    Math.min(
+      (now - game.lastTime) /
+      1000,
+      .05
+    );
+
+  game.lastTime = now;
+
+  update(dt);
+
+  render();
+
+  requestAnimationFrame(loop);
+}
+
+/* ======================================================
+   BUTTONS
+====================================================== */
+
+$("playBtn").onclick =
+  () => startGame(false);
+
+$("practiceBtn").onclick =
+  () => startGame(true);
+
+$("shopBtn").onclick =
+  openShop;
+
+$("customBtn").onclick =
+  openCustomization;
+
+$("closeShop").onclick =
+  () => {
+    hide("shop");
+    show("menu");
+  };
+
+$("closeCustom").onclick =
+  () => {
+    hide("customization");
+    show("menu");
+  };
+
+$("continueBtn").onclick =
+  nextRound;
+
+$("playAgainBtn").onclick =
+  () => startGame(false);
+
+$("menuBtn").onclick =
+  () => {
+    game.state = "menu";
+
+    hide("winnerScreen");
+    hide("hud");
+    show("menu");
+
+    updateProfileUI();
+  };
+
+/* ======================================================
+   INITIALIZATION
+====================================================== */
+
+function init() {
+  updateProfileUI();
+
+  game.map = maps[0];
+
+  updateCamera();
+
+  requestAnimationFrame(loop);
+}
+
+init();
