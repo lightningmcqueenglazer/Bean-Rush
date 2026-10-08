@@ -1,45 +1,16 @@
-/*
-  MINI3D
-  A tiny dependency-free 3D engine for Bean Rush.
+class V3 {
 
-  It uses:
-  - HTML Canvas
-  - Perspective projection
-  - Simple 3D boxes
-  - Spheres
-  - Cylinders
-  - Basic lighting
-  - Camera movement
-*/
-
-class Vec3 {
   constructor(x = 0, y = 0, z = 0) {
     this.x = x;
     this.y = y;
     this.z = z;
   }
 
-  add(v) {
-    return new Vec3(
-      this.x + v.x,
-      this.y + v.y,
-      this.z + v.z
-    );
-  }
-
   sub(v) {
-    return new Vec3(
+    return new V3(
       this.x - v.x,
       this.y - v.y,
       this.z - v.z
-    );
-  }
-
-  multiply(n) {
-    return new Vec3(
-      this.x * n,
-      this.y * n,
-      this.z * n
     );
   }
 
@@ -54,255 +25,416 @@ class Vec3 {
   normalize() {
     const l = this.length() || 1;
 
-    return new Vec3(
+    return new V3(
       this.x / l,
       this.y / l,
       this.z / l
     );
   }
-
-  static distance(a, b) {
-    return a.sub(b).length();
-  }
 }
 
-class Mini3D {
-  constructor(canvas) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext("2d");
 
-    this.width = window.innerWidth;
-    this.height = window.innerHeight;
+class Mini3D {
+
+  constructor(canvas) {
+
+    this.canvas = canvas;
+
+    this.ctx =
+      canvas.getContext("2d");
+
+    this.width =
+      window.innerWidth;
+
+    this.height =
+      window.innerHeight;
 
     this.camera = {
-      position: new Vec3(0, 7, -13),
-      target: new Vec3(0, 1, 12),
+      x: 0,
+      y: 7,
+      z: -15,
+
+      targetX: 0,
+      targetY: 1,
+      targetZ: 15,
+
       fov: 70
     };
 
-    this.objects = [];
-
     this.resize();
 
-    window.addEventListener("resize", () => this.resize());
+    window.addEventListener(
+      "resize",
+      () => this.resize()
+    );
   }
+
 
   resize() {
-    this.width = window.innerWidth;
-    this.height = window.innerHeight;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.width =
+      window.innerWidth;
 
-    this.canvas.width = this.width * dpr;
-    this.canvas.height = this.height * dpr;
+    this.height =
+      window.innerHeight;
 
-    this.canvas.style.width = this.width + "px";
-    this.canvas.style.height = this.height + "px";
+    const dpr =
+      Math.min(
+        window.devicePixelRatio || 1,
+        2
+      );
 
-    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
+    this.canvas.width =
+      this.width * dpr;
 
-  clear(color = "#79c8ff") {
-    this.ctx.fillStyle = color;
-    this.ctx.fillRect(0, 0, this.width, this.height);
-  }
+    this.canvas.height =
+      this.height * dpr;
 
-  project(point) {
-    const camera = this.camera;
+    this.canvas.style.width =
+      this.width + "px";
 
-    const forward = camera.target
-      .sub(camera.position)
-      .normalize();
+    this.canvas.style.height =
+      this.height + "px";
 
-    const right = new Vec3(
-      forward.z,
+    this.ctx.setTransform(
+      dpr,
       0,
-      -forward.x
-    ).normalize();
-
-    const up = new Vec3(
       0,
-      1,
+      dpr,
+      0,
       0
     );
+  }
 
-    const relative = point.sub(camera.position);
 
-    const x = relative.x * right.x +
-              relative.y * right.y +
-              relative.z * right.z;
+  project(x, y, z) {
 
-    const y = relative.x * up.x +
-              relative.y * up.y +
-              relative.z * up.z;
+    const cam = this.camera;
 
-    const z = relative.x * forward.x +
-              relative.y * forward.y +
-              relative.z * forward.z;
+    const dx =
+      cam.targetX - cam.x;
 
-    if (z <= 0.05) {
+    const dy =
+      cam.targetY - cam.y;
+
+    const dz =
+      cam.targetZ - cam.z;
+
+    const len =
+      Math.sqrt(
+        dx * dx +
+        dy * dy +
+        dz * dz
+      ) || 1;
+
+    const fx = dx / len;
+    const fy = dy / len;
+    const fz = dz / len;
+
+    const rightX = fz;
+    const rightZ = -fx;
+
+    const relX = x - cam.x;
+    const relY = y - cam.y;
+    const relZ = z - cam.z;
+
+    const screenX =
+      relX * rightX +
+      relZ * rightZ;
+
+    const screenY =
+      relX * -fx * fy +
+      relY +
+      relZ * -fz * fy;
+
+    const depth =
+      relX * fx +
+      relY * fy +
+      relZ * fz;
+
+    if (depth <= .1)
       return null;
-    }
 
-    const f = 1 / Math.tan(
-      camera.fov * Math.PI / 360
-    );
+    const focal =
+      1 /
+      Math.tan(
+        cam.fov *
+        Math.PI /
+        360
+      );
 
     return {
-      x: this.width / 2 +
-        (x * f / z) *
+
+      x:
+        this.width / 2 +
+        screenX *
+        focal /
+        depth *
         this.height / 2,
 
-      y: this.height / 2 -
-        (y * f / z) *
+      y:
+        this.height / 2 -
+        screenY *
+        focal /
+        depth *
         this.height / 2,
 
-      depth: z
+      depth
     };
   }
 
-  shadeColor(hex, amount) {
-    const color = hex.replace("#", "");
 
-    const r = parseInt(color.substring(0, 2), 16);
-    const g = parseInt(color.substring(2, 4), 16);
-    const b = parseInt(color.substring(4, 6), 16);
+  shade(hex, amount) {
 
-    const nr = Math.max(
-      0,
-      Math.min(255, r + amount)
-    );
+    hex =
+      hex.replace("#", "");
 
-    const ng = Math.max(
-      0,
-      Math.min(255, g + amount)
-    );
+    let r =
+      parseInt(
+        hex.substring(0, 2),
+        16
+      );
 
-    const nb = Math.max(
-      0,
-      Math.min(255, b + amount)
-    );
+    let g =
+      parseInt(
+        hex.substring(2, 4),
+        16
+      );
 
-    return `rgb(${nr},${ng},${nb})`;
+    let b =
+      parseInt(
+        hex.substring(4, 6),
+        16
+      );
+
+    r =
+      Math.max(
+        0,
+        Math.min(
+          255,
+          r + amount
+        )
+      );
+
+    g =
+      Math.max(
+        0,
+        Math.min(
+          255,
+          g + amount
+        )
+      );
+
+    b =
+      Math.max(
+        0,
+        Math.min(
+          255,
+          b + amount
+        )
+      );
+
+    return `rgb(${r},${g},${b})`;
   }
 
-  box(x, y, z, width, height, depth, color, options = {}) {
-    const vertices = [
-      new Vec3(x - width / 2, y, z - depth / 2),
-      new Vec3(x + width / 2, y, z - depth / 2),
-      new Vec3(x + width / 2, y + height, z - depth / 2),
-      new Vec3(x - width / 2, y + height, z - depth / 2),
 
-      new Vec3(x - width / 2, y, z + depth / 2),
-      new Vec3(x + width / 2, y, z + depth / 2),
-      new Vec3(x + width / 2, y + height, z + depth / 2),
-      new Vec3(x - width / 2, y + height, z + depth / 2)
+  box(
+    x,
+    y,
+    z,
+    w,
+    h,
+    d,
+    color
+  ) {
+
+    const hw = w / 2;
+    const hd = d / 2;
+
+    const v = [
+
+      this.project(
+        x - hw,
+        y,
+        z - hd
+      ),
+
+      this.project(
+        x + hw,
+        y,
+        z - hd
+      ),
+
+      this.project(
+        x + hw,
+        y + h,
+        z - hd
+      ),
+
+      this.project(
+        x - hw,
+        y + h,
+        z - hd
+      ),
+
+      this.project(
+        x - hw,
+        y,
+        z + hd
+      ),
+
+      this.project(
+        x + hw,
+        y,
+        z + hd
+      ),
+
+      this.project(
+        x + hw,
+        y + h,
+        z + hd
+      ),
+
+      this.project(
+        x - hw,
+        y + h,
+        z + hd
+      )
     ];
 
     const faces = [
-      [0, 1, 2, 3, -15],
-      [4, 7, 6, 5, 20],
+
+      [0, 1, 2, 3, 15],
+      [4, 7, 6, 5, -10],
       [0, 4, 5, 1, -5],
-      [3, 2, 6, 7, 15],
+      [3, 2, 6, 7, 25],
       [1, 5, 6, 2, 5],
-      [0, 3, 7, 4, -25]
+      [0, 3, 7, 4, -20]
+
     ];
 
-    this.drawFaces(
-      vertices,
-      faces,
-      color,
-      options
-    );
-  }
+    const draw = [];
 
-  drawFaces(vertices, faces, color, options = {}) {
-    const projected = vertices.map(v =>
-      this.project(v)
-    );
+    for (
+      const face of faces
+    ) {
 
-    const drawable = [];
+      const points =
+        face
+          .slice(0, 4)
+          .map(i => v[i]);
 
-    for (const face of faces) {
-      const pts = face
-        .slice(0, 4)
-        .map(i => projected[i]);
-
-      if (pts.some(p => !p)) continue;
+      if (
+        points.some(
+          p => !p
+        )
+      )
+        continue;
 
       const depth =
-        pts.reduce((sum, p) =>
-          sum + p.depth, 0
+        points.reduce(
+          (a, p) =>
+            a + p.depth,
+          0
         ) / 4;
 
-      drawable.push({
-        pts,
+      draw.push({
+        points,
         depth,
-        shade: face[4] || 0
+        shade: face[4]
       });
     }
 
-    drawable.sort((a, b) =>
-      b.depth - a.depth
+    draw.sort(
+      (a, b) =>
+        b.depth - a.depth
     );
 
-    for (const face of drawable) {
+    for (
+      const face of draw
+    ) {
+
       this.ctx.beginPath();
 
       this.ctx.moveTo(
-        face.pts[0].x,
-        face.pts[0].y
+        face.points[0].x,
+        face.points[0].y
       );
 
-      for (let i = 1; i < face.pts.length; i++) {
+      for (
+        let i = 1;
+        i < face.points.length;
+        i++
+      ) {
+
         this.ctx.lineTo(
-          face.pts[i].x,
-          face.pts[i].y
+          face.points[i].x,
+          face.points[i].y
         );
       }
 
       this.ctx.closePath();
 
       this.ctx.fillStyle =
-        this.shadeColor(color, face.shade);
+        this.shade(
+          color,
+          face.shade
+        );
 
       this.ctx.fill();
 
-      if (options.outline !== false) {
-        this.ctx.strokeStyle =
-          "rgba(0,0,0,.15)";
+      this.ctx.strokeStyle =
+        "rgba(0,0,0,.12)";
 
-        this.ctx.lineWidth = 1;
-
-        this.ctx.stroke();
-      }
+      this.ctx.stroke();
     }
   }
 
-  sphere(x, y, z, radius, color) {
-    const p = this.project(
-      new Vec3(x, y, z)
-    );
 
-    if (!p) return;
+  sphere(
+    x,
+    y,
+    z,
+    radius,
+    color
+  ) {
 
-    const edge = this.project(
-      new Vec3(x + radius, y, z)
-    );
+    const p =
+      this.project(
+        x,
+        y,
+        z
+      );
 
-    if (!edge) return;
+    if (!p)
+      return;
 
-    const screenRadius =
-      Math.abs(edge.x - p.x);
+    const edge =
+      this.project(
+        x + radius,
+        y,
+        z
+      );
+
+    if (!edge)
+      return;
+
+    const r =
+      Math.abs(
+        edge.x - p.x
+      );
+
+    if (r < .5)
+      return;
 
     const gradient =
       this.ctx.createRadialGradient(
-        p.x - screenRadius * .3,
-        p.y - screenRadius * .4,
-        2,
+        p.x - r * .35,
+        p.y - r * .4,
+        1,
         p.x,
         p.y,
-        screenRadius
+        r
       );
 
     gradient.addColorStop(
@@ -311,13 +443,16 @@ class Mini3D {
     );
 
     gradient.addColorStop(
-      .25,
+      .2,
       color
     );
 
     gradient.addColorStop(
       1,
-      this.shadeColor(color, -50)
+      this.shade(
+        color,
+        -55
+      )
     );
 
     this.ctx.beginPath();
@@ -325,62 +460,105 @@ class Mini3D {
     this.ctx.arc(
       p.x,
       p.y,
-      screenRadius,
+      r,
       0,
       Math.PI * 2
     );
 
-    this.ctx.fillStyle = gradient;
+    this.ctx.fillStyle =
+      gradient;
+
     this.ctx.fill();
   }
 
-  cylinder(
-    x,
-    y,
-    z,
-    radius,
-    height,
-    color
+
+  line(
+    x1,
+    y1,
+    z1,
+    x2,
+    y2,
+    z2,
+    color,
+    width = 1
   ) {
-    this.box(
-      x,
-      y,
-      z,
-      radius * 2,
-      height,
-      radius * 2,
-      color
+
+    const a =
+      this.project(
+        x1,
+        y1,
+        z1
+      );
+
+    const b =
+      this.project(
+        x2,
+        y2,
+        z2
+      );
+
+    if (!a || !b)
+      return;
+
+    this.ctx.beginPath();
+
+    this.ctx.moveTo(
+      a.x,
+      a.y
     );
 
-    this.sphere(
-      x,
-      y + height,
-      z,
-      radius,
-      color
+    this.ctx.lineTo(
+      b.x,
+      b.y
     );
+
+    this.ctx.strokeStyle =
+      color;
+
+    this.ctx.lineWidth =
+      width;
+
+    this.ctx.stroke();
   }
 
-  text3D(
+
+  text(
     text,
     x,
     y,
     z,
-    size = 20,
-    color = "white"
+    size = 20
   ) {
-    const p = this.project(
-      new Vec3(x, y, z)
-    );
 
-    if (!p) return;
+    const p =
+      this.project(
+        x,
+        y,
+        z
+      );
+
+    if (!p)
+      return;
 
     this.ctx.font =
       `900 ${size}px Arial`;
 
-    this.ctx.textAlign = "center";
+    this.ctx.textAlign =
+      "center";
 
-    this.ctx.fillStyle = color;
+    this.ctx.fillStyle =
+      "white";
+
+    this.ctx.strokeStyle =
+      "rgba(0,0,0,.5)";
+
+    this.ctx.lineWidth = 4;
+
+    this.ctx.strokeText(
+      text,
+      p.x,
+      p.y
+    );
 
     this.ctx.fillText(
       text,
@@ -389,6 +567,3 @@ class Mini3D {
     );
   }
 }
-
-window.Vec3 = Vec3;
-window.Mini3D = Mini3D;
