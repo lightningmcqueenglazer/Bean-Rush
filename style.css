@@ -1,739 +1,877 @@
+/* =========================================
+   BEAN BLAST - VIBRANT GAME UI
+========================================= */
+
 * {
   box-sizing: border-box;
-  user-select: none;
+  margin: 0;
+  padding: 0;
 }
 
 html,
 body {
-  margin: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
   font-family: Arial, Helvetica, sans-serif;
-  background: #10152e;
-  color: white;
 }
 
-button {
-  border: 0;
-  cursor: pointer;
-  font-family: inherit;
+body {
   color: white;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255, 77, 166, 0.45), transparent 25%),
+    radial-gradient(circle at 85% 15%, rgba(0, 220, 255, 0.4), transparent 25%),
+    radial-gradient(circle at 50% 100%, rgba(122, 67, 255, 0.5), transparent 40%),
+    linear-gradient(135deg, #160b38, #30206b 45%, #071f4d);
+}
+
+
+/* =========================================
+   GENERAL SCREENS
+========================================= */
+
+.screen {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  padding: 30px;
+
+  overflow-y: auto;
 }
 
 .hidden {
   display: none !important;
 }
 
-#game,
-#canvas {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
 
-#canvas {
-  display: block;
-}
+/* =========================================
+   HOME SCREEN
+========================================= */
 
-/* =========================
-   SCREENS
-========================= */
-
-.screen {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+#home {
+  isolation: isolate;
 
   background:
-    radial-gradient(
-      circle at 50% 20%,
-      rgba(90, 190, 255, .3),
-      transparent 35%
-    ),
-    linear-gradient(
-      135deg,
-      #10152e,
-      #28184e,
-      #102f55
-    );
+    radial-gradient(circle at 50% 15%,
+      rgba(255,255,255,0.12),
+      transparent 22%),
+    radial-gradient(circle at 10% 80%,
+      rgba(255, 64, 180, 0.2),
+      transparent 25%),
+    radial-gradient(circle at 90% 75%,
+      rgba(0, 225, 255, 0.18),
+      transparent 25%);
 }
 
-/* =========================
-   LOGO
-========================= */
 
-.logo {
-  text-align: center;
-  animation: floating 2s infinite ease-in-out;
+/* Floating colorful circles */
+
+#home::before {
+  content: "";
+  position: absolute;
+
+  width: 250px;
+  height: 250px;
+
+  left: -70px;
+  top: 100px;
+
+  border-radius: 50%;
+
+  background: linear-gradient(
+    135deg,
+    #ff4fa3,
+    #ff8a3d
+  );
+
+  opacity: 0.25;
+
+  filter: blur(2px);
+
+  animation: floatLeft 5s ease-in-out infinite;
+
+  z-index: -1;
 }
 
-.logoBean {
-  font-size: 85px;
-  filter: drop-shadow(0 15px 8px rgba(0,0,0,.35));
+
+#home::after {
+  content: "";
+  position: absolute;
+
+  width: 300px;
+  height: 300px;
+
+  right: -100px;
+  bottom: 50px;
+
+  border-radius: 50%;
+
+  background: linear-gradient(
+    135deg,
+    #00e5ff,
+    #675cff
+  );
+
+  opacity: 0.25;
+
+  animation: floatRight 6s ease-in-out infinite;
+
+  z-index: -1;
 }
 
-.logo h1 {
-  margin: 0;
-  font-size: clamp(45px, 9vw, 90px);
+
+@keyframes floatLeft {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-25px) rotate(10deg);
+  }
+}
+
+
+@keyframes floatRight {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(25px) rotate(-10deg);
+  }
+}
+
+
+/* =========================================
+   TITLE
+========================================= */
+
+#home h1 {
+  position: relative;
+
+  font-size: clamp(55px, 8vw, 105px);
+
   font-weight: 1000;
+
   letter-spacing: -5px;
+
+  margin-bottom: 5px;
+
+  background: linear-gradient(
+    90deg,
+    #ffffff,
+    #5de7ff,
+    #ff65c7,
+    #ffe45c,
+    #ffffff
+  );
+
+  background-size: 300% auto;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  color: transparent;
+
+  animation: titleColors 4s linear infinite;
+
+  filter:
+    drop-shadow(0 5px 0 rgba(0,0,0,0.25))
+    drop-shadow(0 0 20px rgba(90,220,255,0.3));
+}
+
+
+@keyframes titleColors {
+  0% {
+    background-position: 0% center;
+  }
+
+  100% {
+    background-position: 300% center;
+  }
+}
+
+
+/* Little subtitle */
+
+#home > p {
+  font-size: 20px;
+
+  font-weight: 700;
+
+  letter-spacing: 3px;
+
+  text-transform: uppercase;
+
+  color: #dce8ff;
+
+  margin-bottom: 35px;
+
   text-shadow:
-    5px 5px 0 #101020,
-    0 10px 30px rgba(0,0,0,.4);
+    0 3px 10px rgba(0,0,0,0.5);
 }
 
-.logo p {
-  margin: 3px 0 25px;
-  font-size: 13px;
-  letter-spacing: 5px;
-  font-weight: bold;
-  opacity: .75;
-}
 
-/* =========================
-   BUTTONS
-========================= */
+/* =========================================
+   MAIN MENU BUTTONS
+========================================= */
 
-.menuButtons {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: min(350px, 85vw);
-}
+#home button {
+  position: relative;
 
-.menuButtons button,
-#homeBtn {
-  min-height: 55px;
-  border-radius: 16px;
+  width: 290px;
 
-  background: rgba(255,255,255,.12);
-  border: 2px solid rgba(255,255,255,.15);
+  min-height: 58px;
 
-  font-size: 18px;
+  margin: 7px;
+
+  border: none;
+
+  border-radius: 18px;
+
+  color: white;
+
+  font-size: 19px;
+
   font-weight: 900;
 
-  transition: .15s;
-}
+  letter-spacing: 1px;
 
-.menuButtons button:hover,
-#homeBtn:hover {
-  transform: scale(1.04);
-  background: rgba(255,255,255,.2);
-}
-
-.bigButton {
-  min-height: 60px;
-  border-radius: 16px;
+  cursor: pointer;
 
   background:
     linear-gradient(
       135deg,
-      #ff3f70,
-      #ff8b32
-    ) !important;
+      #ff4fa3,
+      #7658ff
+    );
 
   box-shadow:
-    0 7px 0 #ad2548,
-    0 15px 25px rgba(0,0,0,.3);
+    0 7px 0 #382477,
+    0 12px 25px rgba(0,0,0,0.35);
 
-  font-size: 20px;
-  font-weight: 1000;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    filter 0.15s ease;
 }
 
-.bigButton:active {
-  transform: translateY(5px);
-  box-shadow: 0 2px 0 #ad2548;
-}
 
-/* =========================
-   PROFILE
-========================= */
+/* Shine */
 
-.profile {
-  display: flex;
-  gap: 28px;
+#home button::before {
+  content: "";
 
-  margin-top: 25px;
-  padding: 14px 24px;
+  position: absolute;
 
-  border-radius: 20px;
+  left: 8px;
+  right: 8px;
+  top: 5px;
 
-  background: rgba(0,0,0,.3);
-  backdrop-filter: blur(10px);
-}
+  height: 18px;
 
-.profile div {
-  text-align: center;
-}
+  border-radius: 15px;
 
-.profile small {
-  display: block;
-  font-size: 9px;
-  opacity: .6;
-}
+  background: rgba(255,255,255,0.18);
 
-.profile b {
-  font-size: 20px;
-}
-
-/* =========================
-   HUD
-========================= */
-
-#hud {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
   pointer-events: none;
 }
 
-.topHud {
-  display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
+
+#home button:hover {
+  transform: translateY(-5px) scale(1.04);
+
+  box-shadow:
+    0 11px 0 #382477,
+    0 18px 35px rgba(0,0,0,0.4);
+
+  filter: brightness(1.15);
+}
+
+
+#home button:active {
+  transform: translateY(4px) scale(0.98);
+
+  box-shadow:
+    0 3px 0 #382477,
+    0 7px 15px rgba(0,0,0,0.3);
+}
+
+
+/* Different button colors */
+
+#playBtn {
+  background:
+    linear-gradient(
+      135deg,
+      #00d4ff,
+      #0878ff
+    ) !important;
+
+  box-shadow:
+    0 7px 0 #064aa4,
+    0 12px 25px rgba(0,120,255,0.35) !important;
+
+  font-size: 23px !important;
+}
+
+
+#shopBtn {
+  background:
+    linear-gradient(
+      135deg,
+      #ffbd32,
+      #ff6b2c
+    ) !important;
+
+  box-shadow:
+    0 7px 0 #a73b19,
+    0 12px 25px rgba(255,120,30,0.3) !important;
+}
+
+
+#customBtn {
+  background:
+    linear-gradient(
+      135deg,
+      #b44cff,
+      #6d4cff
+    ) !important;
+
+  box-shadow:
+    0 7px 0 #3e299e,
+    0 12px 25px rgba(130,70,255,0.3) !important;
+}
+
+
+#wheelBtn {
+  background:
+    linear-gradient(
+      135deg,
+      #ff4f91,
+      #ff2470
+    ) !important;
+
+  box-shadow:
+    0 7px 0 #a9164b,
+    0 12px 25px rgba(255,40,120,0.3) !important;
+}
+
+
+/* =========================================
+   PROFILE BAR
+========================================= */
+
+#profile {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
   gap: 12px;
-  padding: 15px;
+
+  margin-top: 30px;
+
+  padding: 12px 22px;
+
+  border-radius: 22px;
+
+  background:
+    rgba(10, 10, 40, 0.55);
+
+  border: 2px solid rgba(255,255,255,0.15);
+
+  backdrop-filter: blur(15px);
+
+  box-shadow:
+    0 10px 35px rgba(0,0,0,0.3);
+
+  font-size: 17px;
+
+  font-weight: 800;
 }
 
-.hudCard {
-  padding: 10px 16px;
-  border-radius: 15px;
 
-  background: rgba(10,10,25,.75);
-  border: 1px solid rgba(255,255,255,.15);
+#profile span {
+  padding: 7px 12px;
 
-  backdrop-filter: blur(8px);
-}
+  border-radius: 13px;
 
-.hudCard small {
-  display: block;
-  font-size: 10px;
-  opacity: .65;
-}
-
-.hudCard b {
-  font-size: 21px;
-}
-
-.mapHud {
-  text-align: center;
-}
-
-#announcement {
-  position: absolute;
-  top: 125px;
-  left: 50%;
-
-  transform: translateX(-50%);
-
-  font-size: clamp(25px, 5vw, 55px);
-  font-weight: 1000;
-
-  text-align: center;
-
-  text-shadow:
-    4px 4px 0 #101020;
+  background: rgba(255,255,255,0.08);
 
   white-space: nowrap;
 }
 
-.bottomHud {
+
+#profile b {
+  color: #fff;
+}
+
+
+/* =========================================
+   GAME HUD
+========================================= */
+
+#gameScreen {
+  background: #65d9ff;
+}
+
+
+#hud {
   position: absolute;
-  bottom: 15px;
+
+  top: 20px;
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  z-index: 20;
+
+  display: flex;
+
+  gap: 12px;
+
+  align-items: center;
+}
+
+
+#hud span {
+  padding: 12px 18px;
+
+  border-radius: 15px;
+
+  background:
+    rgba(20,15,60,0.75);
+
+  border: 2px solid rgba(255,255,255,0.2);
+
+  backdrop-filter: blur(10px);
+
+  font-weight: 900;
+
+  box-shadow:
+    0 7px 20px rgba(0,0,0,0.25);
+}
+
+
+#gameCanvas {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+}
+
+
+/* =========================================
+   GAME CONTROLS
+========================================= */
+
+#controls {
+  position: absolute;
+
+  bottom: 25px;
+
   left: 50%;
 
   transform: translateX(-50%);
 
   display: flex;
-  gap: 10px;
+
+  gap: 12px;
+
+  z-index: 30;
 }
 
-.bottomHud span {
-  padding: 8px 12px;
 
-  background: rgba(0,0,0,.65);
+#controls button,
+#quitBtn {
+  border: none;
 
-  border-radius: 10px;
+  color: white;
 
-  font-size: 10px;
-  font-weight: bold;
+  font-weight: 900;
+
+  cursor: pointer;
+
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #6c4cff,
+      #e848ff
+    );
+
+  box-shadow:
+    0 6px 0 #38228d,
+    0 10px 20px rgba(0,0,0,0.3);
 }
 
-/* =========================
-   PANELS
-========================= */
 
-.panel {
-  position: fixed;
-  z-index: 50;
+#controls button {
+  width: 75px;
+  height: 65px;
 
-  left: 50%;
-  top: 50%;
+  font-size: 18px;
+}
 
-  transform: translate(-50%, -50%);
 
-  width: min(900px, 94vw);
-  max-height: 90vh;
+#controls button:active {
+  transform: translateY(4px);
+
+  box-shadow:
+    0 2px 0 #38228d;
+}
+
+
+#quitBtn {
+  position: absolute;
+
+  top: 20px;
+  right: 20px;
+
+  padding: 12px 22px;
+
+  z-index: 40;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ff4568,
+      #d71945
+    );
+
+  box-shadow:
+    0 5px 0 #8c1230;
+}
+
+
+/* =========================================
+   SHOP / CUSTOMIZE / WHEEL
+========================================= */
+
+#shopScreen,
+#customScreen,
+#wheelScreen,
+#resultScreen,
+#winnerScreen {
+  background:
+    radial-gradient(
+      circle at top,
+      rgba(90,220,255,0.3),
+      transparent 35%
+    ),
+    linear-gradient(
+      135deg,
+      #171044,
+      #392078,
+      #111d55
+    );
+}
+
+
+#shopScreen h1,
+#customScreen h1,
+#wheelScreen h1,
+#resultScreen h1,
+#winnerScreen h1 {
+  font-size: 55px;
+
+  font-weight: 1000;
+
+  margin-bottom: 20px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #fff,
+      #62eaff,
+      #ff62c8,
+      #fff
+    );
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  color: transparent;
+}
+
+
+#shopScreen > p,
+#customScreen > p,
+#wheelScreen > p,
+#resultScreen > p,
+#winnerScreen > p {
+  font-size: 18px;
+
+  color: #dce4ff;
+
+  margin-bottom: 20px;
+}
+
+
+/* Shop items */
+
+#shopItems {
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(180px, 1fr));
+
+  gap: 15px;
+
+  width: min(900px, 90vw);
+
+  max-height: 60vh;
 
   overflow-y: auto;
 
-  padding: 30px;
+  padding: 15px;
+}
 
-  border-radius: 28px;
+
+#shopItems > div {
+  min-height: 150px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
 
   background:
     linear-gradient(
       145deg,
-      rgba(30,30,60,.98),
-      rgba(12,15,35,.98)
-    );
+      rgba(255,255,255,0.16),
+      rgba(255,255,255,0.05)
+    ) !important;
 
-  border: 2px solid rgba(255,255,255,.12);
+  border:
+    2px solid rgba(255,255,255,0.15);
+
+  border-radius: 20px !important;
+
+  backdrop-filter: blur(12px);
 
   box-shadow:
-    0 30px 90px rgba(0,0,0,.6);
+    0 10px 25px rgba(0,0,0,0.25);
+
+  transition: transform 0.2s ease;
 }
 
-.panel h2 {
-  text-align: center;
-  font-size: 36px;
-  margin-top: 0;
+
+#shopItems > div:hover {
+  transform: translateY(-7px);
 }
 
-.panel h3 {
-  margin-top: 25px;
+
+#shopItems h2 {
+  margin-bottom: 8px;
 }
 
-.close {
-  position: absolute;
-  top: 15px;
-  right: 15px;
 
-  width: 42px;
-  height: 42px;
+#shopItems button,
+#shopBackBtn,
+#customBackBtn,
+#wheelBackBtn,
+#spinBtn,
+#nextRoundBtn,
+#resultHomeBtn,
+#winnerAgainBtn,
+#winnerHomeBtn {
+  border: none;
 
-  border-radius: 50%;
+  padding: 14px 28px;
 
-  background: rgba(255,255,255,.1);
+  margin: 8px;
 
-  font-size: 25px;
-}
-
-/* =========================
-   GRID
-========================= */
-
-.grid {
-  display: grid;
-
-  grid-template-columns:
-    repeat(
-      auto-fit,
-      minmax(150px, 1fr)
-    );
-
-  gap: 14px;
-}
-
-.shopBalance {
-  text-align: center;
-  font-size: 20px;
-  margin-bottom: 20px;
-}
-
-.item {
-  padding: 15px;
-
-  border-radius: 18px;
-
-  background: rgba(255,255,255,.07);
-
-  border: 1px solid rgba(255,255,255,.1);
-
-  text-align: center;
-}
-
-.itemIcon {
-  height: 75px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-size: 55px;
-}
-
-.item h3 {
-  margin: 5px 0;
-}
-
-.rarity {
-  font-size: 10px;
-  opacity: .6;
-  text-transform: uppercase;
-}
-
-.item button {
-  margin-top: 10px;
-
-  padding: 10px 16px;
-
-  border-radius: 10px;
-
-  background: #ff4773;
-
-  font-weight: bold;
-}
-
-.item button.owned {
-  background: #27c985;
-}
-
-/* =========================
-   CUSTOMIZATION
-========================= */
-
-.customPreview {
-  width: 100%;
-  height: 190px;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  border-radius: 20px;
+  border-radius: 15px;
 
   background:
-    radial-gradient(
-      circle,
-      #334a7c,
-      #12152d
+    linear-gradient(
+      135deg,
+      #00d4ff,
+      #7757ff
     );
-
-  margin-bottom: 20px;
-}
-
-.previewBean {
-  position: relative;
-
-  width: 90px;
-  height: 120px;
-
-  border-radius:
-    50% 50%
-    43% 43%;
-
-  box-shadow:
-    inset -13px -15px rgba(0,0,0,.2),
-    0 15px 30px rgba(0,0,0,.4);
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  font-size: 22px;
-}
-
-.optionRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.optionRow button {
-  min-width: 65px;
-  min-height: 45px;
-
-  border-radius: 10px;
-
-  background: rgba(255,255,255,.1);
-}
-
-/* =========================
-   WHEEL
-========================= */
-
-.wheelArea {
-  position: relative;
-
-  width: 260px;
-  height: 260px;
-
-  margin: 20px auto;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-#wheelGraphic {
-  width: 230px;
-  height: 230px;
-
-  border-radius: 50%;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  font-size: 65px;
-
-  background:
-    conic-gradient(
-      #ff4773 0 45deg,
-      #ffd43d 45deg 90deg,
-      #45d483 90deg 135deg,
-      #42b9ff 135deg 180deg,
-      #a855f7 180deg 225deg,
-      #ff7a18 225deg 270deg,
-      #23c7c7 270deg 315deg,
-      #ff4773 315deg 360deg
-    );
-
-  border: 10px solid white;
-
-  box-shadow:
-    0 10px 35px rgba(0,0,0,.4);
-
-  transition:
-    transform 3s
-    cubic-bezier(.1,.8,.2,1);
-}
-
-.pointer {
-  position: absolute;
-  z-index: 2;
-
-  top: -2px;
-
-  font-size: 35px;
 
   color: white;
 
-  text-shadow: 2px 2px #111;
-}
+  font-size: 16px;
 
-/* =========================
-   RESULT
-========================= */
+  font-weight: 900;
 
-.resultCard,
-.winnerCard {
-  width: min(500px, 90vw);
-
-  padding: 40px;
-
-  text-align: center;
-
-  border-radius: 30px;
-
-  background:
-    rgba(17,18,40,.97);
+  cursor: pointer;
 
   box-shadow:
-    0 30px 90px rgba(0,0,0,.6);
+    0 5px 0 #33228a,
+    0 8px 18px rgba(0,0,0,0.25);
+
+  transition: 0.15s;
 }
 
-#resultIcon {
-  font-size: 75px;
+
+#shopItems button:hover,
+#shopBackBtn:hover,
+#customBackBtn:hover,
+#wheelBackBtn:hover,
+#spinBtn:hover,
+#nextRoundBtn:hover,
+#resultHomeBtn:hover,
+#winnerAgainBtn:hover,
+#winnerHomeBtn:hover {
+  transform: translateY(-3px);
+
+  filter: brightness(1.15);
 }
 
-.resultCard h1,
-.winnerCard h1 {
-  font-size: 45px;
-  margin: 10px 0;
-}
 
-.resultStats {
+/* =========================================
+   LUCKY WHEEL
+========================================= */
+
+#wheelResult {
+  width: 240px;
+  height: 240px;
+
   display: flex;
+
+  align-items: center;
   justify-content: center;
-  gap: 60px;
 
-  margin: 25px;
+  margin: 20px;
+
+  border-radius: 50%;
+
+  font-size: 30px;
+  font-weight: 1000;
+
+  background:
+    conic-gradient(
+      #ff4f91 0deg 60deg,
+      #ffd83d 60deg 120deg,
+      #40e8ff 120deg 180deg,
+      #9b5cff 180deg 240deg,
+      #42df86 240deg 300deg,
+      #ff713d 300deg 360deg
+    );
+
+  border: 12px solid white;
+
+  box-shadow:
+    0 0 0 8px rgba(255,255,255,0.15),
+    0 15px 50px rgba(0,0,0,0.4);
+
+  animation: wheelFloat 3s ease-in-out infinite;
 }
 
-.resultStats div {
-  display: flex;
-  flex-direction: column;
+
+@keyframes wheelFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-10px) rotate(2deg);
+  }
 }
 
-.resultStats small {
-  opacity: .6;
+
+/* =========================================
+   WIN SCREEN
+========================================= */
+
+#winnerScreen {
+  background:
+    radial-gradient(
+      circle,
+      rgba(255,215,60,0.25),
+      transparent 35%
+    ),
+    linear-gradient(
+      135deg,
+      #28115b,
+      #501b83,
+      #101f62
+    );
 }
 
-.resultStats b {
-  font-size: 28px;
-}
 
-.resultCard button,
-.winnerCard button {
-  width: 100%;
-  margin-top: 10px;
-  min-height: 55px;
-}
-
-/* =========================
-   WINNER
-========================= */
-
-.crownBig {
-  font-size: 110px;
+#winnerScreen h1 {
+  font-size: clamp(55px, 9vw, 100px);
 
   animation:
-    crownFloat 1.4s
-    infinite ease-in-out;
+    winnerBounce 1s ease-in-out infinite alternate;
 }
 
-.fireworks {
-  font-size: 25px;
+
+@keyframes winnerBounce {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(1.06);
+  }
 }
 
-.reward {
-  padding: 14px;
 
-  margin: 8px 0;
-
-  border-radius: 12px;
-
-  background: rgba(255,255,255,.08);
-
-  font-weight: bold;
-}
-
-/* =========================
-   TOAST
-========================= */
-
-#toast {
-  position: fixed;
-
-  z-index: 100;
-
-  left: 50%;
-  bottom: 40px;
-
-  transform:
-    translate(-50%, 100px);
-
-  padding: 14px 25px;
-
-  border-radius: 12px;
-
-  background: #101020;
-
-  font-weight: bold;
-
-  transition: .3s;
-}
-
-#toast.show {
-  transform:
-    translate(-50%, 0);
-}
-
-/* =========================
+/* =========================================
    MOBILE
-========================= */
+========================================= */
 
-#mobileControls {
-  display: none;
-}
+@media (max-width: 700px) {
 
-@media(max-width:700px) {
+  #home h1 {
+    font-size: 55px;
 
-  .topHud {
-    grid-template-columns: 1fr 1fr;
+    letter-spacing: -3px;
   }
 
-  .mapHud {
-    grid-column: 1 / -1;
-    grid-row: 1;
+  #home > p {
+    font-size: 14px;
+
+    letter-spacing: 1px;
   }
 
-  .bottomHud {
-    display: none;
+  #home button {
+    width: 260px;
   }
 
-  #mobileControls {
-    pointer-events: auto;
+  #profile {
+    gap: 5px;
 
-    display: grid;
+    padding: 8px;
 
-    grid-template-columns:
-      repeat(3, 60px);
-
-    gap: 8px;
-
-    position: absolute;
-
-    bottom: 15px;
-    left: 15px;
+    font-size: 12px;
   }
 
-  #mobileControls button {
-    width: 60px;
-    height: 55px;
-
-    border-radius: 12px;
-
-    background: rgba(0,0,0,.6);
-
-    color: white;
-
-    font-weight: bold;
+  #profile span {
+    padding: 6px;
   }
 
-  #mobileJump {
-    grid-column: 4;
+  #hud {
+    width: 95%;
+
+    justify-content: center;
+
+    gap: 5px;
   }
 
-  .profile {
-    gap: 13px;
+  #hud span {
+    padding: 8px;
+
+    font-size: 12px;
   }
 
-  .profile b {
-    font-size: 16px;
-  }
-
-  .logo h1 {
-    letter-spacing: -2px;
-  }
-}
-
-/* =========================
-   ANIMATION
-========================= */
-
-@keyframes floating {
-
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes crownFloat {
-
-  0%,
-  100% {
-    transform:
-      translateY(0)
-      rotate(-3deg);
-  }
-
-  50% {
-    transform:
-      translateY(-12px)
-      rotate(3deg);
-  }
 }
