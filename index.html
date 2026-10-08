@@ -1,166 +1,229 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bean Rush 3D</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bean Rush</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-  <div id="game-container"></div>
+<div id="game">
 
-  <!-- Main Menu -->
-  <div id="menu" class="screen">
+  <canvas id="canvas"></canvas>
+
+  <!-- MAIN MENU -->
+  <section id="menu" class="screen">
     <div class="logo">
-      <div class="logo-bean">🫘</div>
+      <div class="logoBean">🫘</div>
       <h1>BEAN RUSH</h1>
-      <p>3D MULTIPLAYER OBSTACLE MAYHEM</p>
+      <p>ULTIMATE OBSTACLE CHAOS</p>
     </div>
 
-    <div class="menu-buttons">
-      <button id="playBtn" class="main-btn">▶ PLAY</button>
+    <div class="menuButtons">
+      <button id="playBtn" class="bigButton">▶ PLAY</button>
+      <button id="wheelBtn">🎡 DAILY WHEEL</button>
       <button id="shopBtn">🛍 SHOP</button>
       <button id="customBtn">🎨 CUSTOMIZE</button>
-      <button id="practiceBtn">🏃 PRACTICE</button>
     </div>
 
-    <div class="profile-card">
+    <div class="profile">
       <div>
-        <span class="small-label">LEVEL</span>
-        <strong id="menuLevel">1</strong>
+        <small>LEVEL</small>
+        <b id="levelText">1</b>
       </div>
+
       <div>
-        <span class="small-label">XP</span>
-        <strong id="menuXP">0</strong>
+        <small>XP</small>
+        <b id="xpText">0</b>
       </div>
+
       <div>
-        <span class="small-label">CROWNS</span>
-        <strong id="menuCrowns">0</strong>
+        <small>COINS</small>
+        <b id="coinsText">500</b>
+      </div>
+
+      <div>
+        <small>👑 CROWNS</small>
+        <b id="crownText">0</b>
       </div>
     </div>
-  </div>
+  </section>
 
   <!-- HUD -->
-  <div id="hud" class="hidden">
-    <div class="hud-top">
-      <div class="hud-box">
-        <span>ROUND</span>
-        <strong id="roundText">1 / 4</strong>
+  <section id="hud" class="hidden">
+
+    <div class="topHud">
+
+      <div class="hudCard">
+        <small>ROUND</small>
+        <b id="roundText">1 / 4</b>
       </div>
 
-      <div class="hud-box center">
-        <span id="mapName">ROOFTOP RUSH</span>
-        <strong id="timer">00:00</strong>
+      <div class="hudCard mapHud">
+        <small id="mapName">JUNGLE JUMBLE</small>
+        <b id="timer">60</b>
       </div>
 
-      <div class="hud-box">
-        <span>QUALIFIED</span>
-        <strong id="qualifiedText">0 / 20</strong>
+      <div class="hudCard">
+        <small>PLAYERS</small>
+        <b id="playersText">20</b>
       </div>
+
     </div>
 
-    <div id="roundMessage"></div>
+    <div id="announcement"></div>
 
-    <div class="controls">
+    <div class="bottomHud">
       <span>WASD / ARROWS MOVE</span>
       <span>SPACE JUMP</span>
       <span>SHIFT DIVE</span>
     </div>
-  </div>
 
-  <!-- Shop -->
-  <div id="shop" class="panel hidden">
-    <button class="close-btn" id="closeShop">✕</button>
-    <h2>🛍 SHOP</h2>
-
-    <div class="shop-balance">
-      XP: <strong id="shopXP">0</strong>
+    <div id="mobileControls">
+      <button data-key="a">◀</button>
+      <button data-key="w">▲</button>
+      <button data-key="s">▼</button>
+      <button data-key="d">▶</button>
+      <button id="mobileJump">JUMP</button>
     </div>
 
-    <div id="shopItems" class="shop-grid"></div>
-  </div>
+  </section>
 
-  <!-- Customization -->
-  <div id="customization" class="panel hidden">
-    <button class="close-btn" id="closeCustom">✕</button>
+  <!-- DAILY WHEEL -->
+  <section id="wheel" class="panel hidden">
+
+    <button class="close" id="closeWheel">×</button>
+
+    <h2>🎡 DAILY WHEEL</h2>
+
+    <div class="wheelArea">
+      <div class="pointer">▼</div>
+      <div id="wheelGraphic">🎁</div>
+    </div>
+
+    <h3 id="wheelResult">Spin once every day!</h3>
+
+    <button id="spinBtn" class="bigButton">SPIN FREE</button>
+
+  </section>
+
+  <!-- SHOP -->
+  <section id="shop" class="panel hidden">
+
+    <button class="close" id="closeShop">×</button>
+
+    <h2>🛍 BEAN SHOP</h2>
+
+    <div class="shopBalance">
+      🪙 <b id="shopCoins">500</b>
+      &nbsp;&nbsp;
+      ⭐ <b id="shopXP">0</b>
+    </div>
+
+    <div id="shopGrid" class="grid"></div>
+
+  </section>
+
+  <!-- CUSTOMIZATION -->
+  <section id="custom" class="panel hidden">
+
+    <button class="close" id="closeCustom">×</button>
+
     <h2>🎨 CUSTOMIZE</h2>
 
-    <div class="custom-preview">
-      <div id="previewBean" class="preview-bean"></div>
-    </div>
+    <div id="customPreview" class="customPreview"></div>
 
-    <h3>COLOR</h3>
-    <div id="colorOptions" class="color-options"></div>
+    <h3>SKINS</h3>
+
+    <div id="skinGrid" class="grid"></div>
 
     <h3>FACE</h3>
-    <div class="face-options">
+
+    <div class="optionRow">
       <button data-face="happy">●ᴗ●</button>
       <button data-face="cool">⌐■_■</button>
       <button data-face="surprised">●o●</button>
       <button data-face="sleepy">-ᴗ-</button>
     </div>
 
-    <h3>HAT</h3>
-    <div class="hat-options">
+    <h3>HATS</h3>
+
+    <div class="optionRow">
       <button data-hat="none">None</button>
       <button data-hat="cap">🧢</button>
-      <button data-hat="crown">👑</button>
       <button data-hat="helmet">⛑️</button>
+      <button data-hat="crown">👑</button>
       <button data-hat="cowboy">🤠</button>
     </div>
 
-    <button id="saveCustom" class="main-btn">SAVE CHARACTER</button>
-  </div>
+  </section>
 
-  <!-- Round Result -->
-  <div id="resultScreen" class="screen hidden">
-    <div class="result-card">
+  <!-- ROUND RESULT -->
+  <section id="result" class="screen hidden">
+
+    <div class="resultCard">
+
       <div id="resultIcon">🏆</div>
+
       <h1 id="resultTitle">QUALIFIED!</h1>
+
       <p id="resultDescription"></p>
 
-      <div class="result-stats">
+      <div class="resultStats">
         <div>
-          <span>XP</span>
-          <strong id="resultXP">+100</strong>
+          <small>XP</small>
+          <b id="resultXP">+100</b>
         </div>
+
         <div>
-          <span>PLAYERS</span>
-          <strong id="resultPlayers">12</strong>
+          <small>REMAINING</small>
+          <b id="remainingText">12</b>
         </div>
       </div>
 
-      <button id="continueBtn" class="main-btn">CONTINUE</button>
-    </div>
-  </div>
+      <button id="continueBtn" class="bigButton">CONTINUE</button>
 
-  <!-- Final Winner -->
-  <div id="winnerScreen" class="screen hidden">
-    <div class="winner-card">
-      <div class="confetti">🎉</div>
-      <div class="big-crown">👑</div>
+    </div>
+
+  </section>
+
+  <!-- WIN -->
+  <section id="winner" class="screen hidden">
+
+    <div class="winnerCard">
+
+      <div class="fireworks">🎆 🎉 🎆</div>
+
+      <div class="crownBig">👑</div>
+
       <h1>YOU WON!</h1>
+
       <p>YOU ARE THE BEAN RUSH CHAMPION!</p>
 
-      <div class="winner-reward">
-        <span>👑 CROWN</span>
-        <strong>+1</strong>
-      </div>
+      <div class="reward">👑 +1 CROWN</div>
+      <div class="reward">⭐ +1000 XP</div>
+      <div class="reward">🪙 +500 COINS</div>
 
-      <div class="winner-reward">
-        <span>⭐ XP</span>
-        <strong>+1000</strong>
-      </div>
+      <button id="againBtn" class="bigButton">
+        PLAY AGAIN
+      </button>
 
-      <button id="playAgainBtn" class="main-btn">PLAY AGAIN</button>
-      <button id="menuBtn">MAIN MENU</button>
+      <button id="homeBtn">
+        MAIN MENU
+      </button>
+
     </div>
-  </div>
+
+  </section>
 
   <div id="toast"></div>
 
-  <script src="mini3d.js"></script>
-  <script src="game.js"></script>
+</div>
+
+<script src="mini3d.js"></script>
+<script src="game.js"></script>
+
 </body>
 </html>
