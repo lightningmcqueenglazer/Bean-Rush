@@ -1,13 +1,21 @@
-const canvas = document.getElementById("canvas");
+console.log("BEAN BLAST JAVASCRIPT LOADED!");
+
+/* =========================
+   BASIC SETUP
+========================= */
+
+const screens = {
+  home: document.getElementById("home"),
+  game: document.getElementById("gameScreen"),
+  shop: document.getElementById("shopScreen"),
+  custom: document.getElementById("customScreen"),
+  wheel: document.getElementById("wheelScreen"),
+  result: document.getElementById("resultScreen"),
+  winner: document.getElementById("winnerScreen")
+};
+
+const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-window.addEventListener("resize", () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-});
 
 
 /* =========================
@@ -18,129 +26,83 @@ let coins = Number(localStorage.getItem("coins")) || 500;
 let xp = Number(localStorage.getItem("xp")) || 0;
 let crowns = Number(localStorage.getItem("crowns")) || 0;
 
-let ownedSkins =
-    JSON.parse(localStorage.getItem("ownedSkins")) ||
-    ["classic"];
-
-let equippedSkin =
-    localStorage.getItem("equippedSkin") ||
-    "classic";
+let level = Math.floor(xp / 100) + 1;
 
 let round = 1;
+let progress = 0;
+
 let gameRunning = false;
+
 let player = {
-    x: 0,
-    z: 0,
-    y: 0,
-    vy: 0,
-    speed: 7
+  x: 50,
+  y: 0,
+  vy: 0,
+  jumping: false
 };
 
-let keys = {};
-
-
-/* =========================
-   SKINS
-========================= */
+let keys = {
+  left: false,
+  right: false
+};
 
 const skins = [
-
-    {
-        id: "classic",
-        name: "Classic Bean",
-        icon: "🫘",
-        color: "#ff4773",
-        price: 0
-    },
-
-    {
-        id: "dino",
-        name: "Dinosaur",
-        icon: "🦖",
-        color: "#4dcc65",
-        price: 600
-    },
-
-    {
-        id: "basketball",
-        name: "Basketball",
-        icon: "🏀",
-        color: "#ed7d32",
-        price: 750
-    },
-
-    {
-        id: "soccer",
-        name: "Soccer",
-        icon: "⚽",
-        color: "#eeeeee",
-        price: 800
-    },
-
-    {
-        id: "pizza",
-        name: "Pizza",
-        icon: "🍕",
-        color: "#ff9b32",
-        price: 650
-    },
-
-    {
-        id: "burger",
-        name: "Burger",
-        icon: "🍔",
-        color: "#b96c32",
-        price: 700
-    },
-
-    {
-        id: "astronaut",
-        name: "Astronaut",
-        icon: "👨‍🚀",
-        color: "#e5e5e5",
-        price: 1200
-    },
-
-    {
-        id: "alien",
-        name: "Alien",
-        icon: "👽",
-        color: "#72df50",
-        price: 1500
-    },
-
-    {
-        id: "shark",
-        name: "Shark",
-        icon: "🦈",
-        color: "#5598bd",
-        price: 1000
-    },
-
-    {
-        id: "dragon",
-        name: "Dragon",
-        icon: "🐲",
-        color: "#d93636",
-        price: 2500
-    },
-
-    {
-        id: "robot",
-        name: "Robot",
-        icon: "🤖",
-        color: "#8290a6",
-        price: 1800
-    },
-
-    {
-        id: "pirate",
-        name: "Pirate",
-        icon: "🏴‍☠️",
-        color: "#713d91",
-        price: 1400
-    }
+  {
+    name: "Classic Bean",
+    emoji: "🫘",
+    price: 0
+  },
+  {
+    name: "Dinosaur",
+    emoji: "🦖",
+    price: 300
+  },
+  {
+    name: "Basketball",
+    emoji: "🏀",
+    price: 400
+  },
+  {
+    name: "Soccer",
+    emoji: "⚽",
+    price: 400
+  },
+  {
+    name: "Pizza",
+    emoji: "🍕",
+    price: 500
+  },
+  {
+    name: "Burger",
+    emoji: "🍔",
+    price: 500
+  },
+  {
+    name: "Astronaut",
+    emoji: "👨‍🚀",
+    price: 700
+  },
+  {
+    name: "Alien",
+    emoji: "👽",
+    price: 800
+  },
+  {
+    name: "Shark",
+    emoji: "🦈",
+    price: 900
+  },
+  {
+    name: "Dragon",
+    emoji: "🐉",
+    price: 1200
+  }
 ];
+
+let owned = JSON.parse(
+  localStorage.getItem("ownedSkins") || '["Classic Bean"]'
+);
+
+let equipped = localStorage.getItem("equippedSkin") || "Classic Bean";
 
 
 /* =========================
@@ -148,88 +110,38 @@ const skins = [
 ========================= */
 
 const maps = [
-
-    {
-        name: "JUNGLE JUMBLE",
-        icon: "🌴",
-        color: "#45a84f"
-    },
-
-    {
-        name: "OCEAN ODYSSEY",
-        icon: "🌊",
-        color: "#168ca8"
-    },
-
-    {
-        name: "SPORTS STADIUM",
-        icon: "🏟️",
-        color: "#3f9853"
-    },
-
-    {
-        name: "FOOD FRENZY",
-        icon: "🍕",
-        color: "#d98c42"
-    },
-
-    {
-        name: "SPACE STAMPEDE",
-        icon: "🚀",
-        color: "#28264e"
-    },
-
-    {
-        name: "VOLCANO MAYHEM",
-        icon: "🌋",
-        color: "#71332d"
-    },
-
-    {
-        name: "ICE INVASION",
-        icon: "❄️",
-        color: "#80cfe5"
-    },
-
-    {
-        name: "PIRATE PLUNDER",
-        icon: "🏴‍☠️",
-        color: "#705638"
-    },
-
-    {
-        name: "CANDY CHAOS",
-        icon: "🍬",
-        color: "#d976b5"
-    },
-
-    {
-        name: "CITY CRASH",
-        icon: "🏙️",
-        color: "#536786"
-    }
+  "JUNGLE RUN",
+  "ICE MOUNTAIN",
+  "SPACE STATION",
+  "VOLCANO",
+  "CANDY CHAOS",
+  "PIRATE BAY",
+  "CITY DASH",
+  "UNDERWATER",
+  "CASTLE CRASH",
+  "STADIUM"
 ];
 
 
 /* =========================
-   SCREEN HELPERS
+   SCREEN CONTROL
 ========================= */
 
-function hide(id) {
-    const element = document.getElementById(id);
+function hideAllScreens() {
 
-    if (element) {
-        element.classList.add("hidden");
-    }
+  Object.values(screens).forEach(screen => {
+    screen.classList.add("hidden");
+  });
+
 }
 
 
-function show(id) {
-    const element = document.getElementById(id);
+function showScreen(name) {
 
-    if (element) {
-        element.classList.remove("hidden");
-    }
+  hideAllScreens();
+
+  screens[name].classList.remove("hidden");
+
 }
 
 
@@ -239,32 +151,16 @@ function show(id) {
 
 function updateProfile() {
 
-    const level =
-        Math.floor(xp / 1000) + 1;
+  level = Math.floor(xp / 100) + 1;
 
-    const levelElement =
-        document.getElementById("levelText");
+  document.getElementById("level").textContent = level;
+  document.getElementById("xp").textContent = xp;
+  document.getElementById("coins").textContent = coins;
+  document.getElementById("crowns").textContent = crowns;
 
-    const xpElement =
-        document.getElementById("xpText");
-
-    const coinsElement =
-        document.getElementById("coinsText");
-
-    const crownElement =
-        document.getElementById("crownText");
-
-    if (levelElement)
-        levelElement.textContent = level;
-
-    if (xpElement)
-        xpElement.textContent = xp;
-
-    if (coinsElement)
-        coinsElement.textContent = coins;
-
-    if (crownElement)
-        crownElement.textContent = crowns;
+  localStorage.setItem("coins", coins);
+  localStorage.setItem("xp", xp);
+  localStorage.setItem("crowns", crowns);
 }
 
 
@@ -274,85 +170,311 @@ function updateProfile() {
 
 function startGame() {
 
-    console.log("PLAY BUTTON WORKED");
+  console.log("PLAY BUTTON WORKED!");
 
-    hide("menu");
-    hide("result");
-    hide("winner");
-    hide("shop");
-    hide("custom");
-    hide("wheel");
+  round = 1;
 
-    show("hud");
+  startRound();
 
-    gameRunning = true;
-    round = 1;
+}
 
-    player.x = 0;
-    player.z = 0;
-    player.y = 0;
-    player.vy = 0;
 
-    startRound();
+function startRound() {
+
+  gameRunning = true;
+
+  progress = 0;
+
+  player.x = 50;
+  player.y = 0;
+  player.vy = 0;
+  player.jumping = false;
+
+  document.getElementById("roundText").textContent =
+    `ROUND ${round} / 4`;
+
+  document.getElementById("mapText").textContent =
+    maps[(round - 1) % maps.length];
+
+  showScreen("game");
+
+  resizeCanvas();
+
 }
 
 
 /* =========================
-   ROUND
+   CANVAS
 ========================= */
 
-function startRound() {
+function resizeCanvas() {
 
-    const map =
-        maps[
-            Math.floor(
-                Math.random() * maps.length
-            )
-        ];
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 
-    document.getElementById("roundText").textContent =
-        `${round} / 4`;
+}
 
-    document.getElementById("mapName").textContent =
-        `${map.icon} ${map.name}`;
+window.addEventListener("resize", resizeCanvas);
 
-    document.getElementById("playersText").textContent =
-        round === 1
-            ? "20"
-            : round === 2
-                ? "14"
-                : round === 3
-                    ? "8"
-                    : "4";
 
-    document.getElementById("timer").textContent =
-        "60";
+/* =========================
+   GAME LOOP
+========================= */
 
-    const announcement =
-        document.getElementById("announcement");
+function gameLoop() {
 
-    announcement.textContent =
-        `${map.icon} ${map.name}`;
+  if (gameRunning) {
 
-    setTimeout(() => {
-        announcement.textContent = "3";
-    }, 1000);
+    updateGame();
+    drawGame();
 
-    setTimeout(() => {
-        announcement.textContent = "2";
-    }, 1600);
+  }
 
-    setTimeout(() => {
-        announcement.textContent = "1";
-    }, 2200);
+  requestAnimationFrame(gameLoop);
 
-    setTimeout(() => {
-        announcement.textContent = "GO!";
-    }, 2800);
+}
 
-    setTimeout(() => {
-        announcement.textContent = "";
-    }, 3800);
+
+/* =========================
+   GAME UPDATE
+========================= */
+
+function updateGame() {
+
+  if (keys.left) {
+    player.x -= 5;
+  }
+
+  if (keys.right) {
+    player.x += 5;
+  }
+
+  player.x = Math.max(30, Math.min(canvas.width - 30, player.x));
+
+
+  /* Automatic forward progress */
+
+  progress += 0.08 + round * 0.01;
+
+  document.getElementById("progressText").textContent =
+    Math.floor(progress) + "%";
+
+
+  /* Jump physics */
+
+  player.y += player.vy;
+
+  player.vy += 0.8;
+
+  if (player.y >= 0) {
+
+    player.y = 0;
+    player.vy = 0;
+    player.jumping = false;
+
+  }
+
+
+  /* Finish */
+
+  if (progress >= 100) {
+
+    gameRunning = false;
+
+    qualify();
+
+  }
+
+}
+
+
+/* =========================
+   DRAW GAME
+========================= */
+
+function drawGame() {
+
+  const w = canvas.width;
+  const h = canvas.height;
+
+
+  /* Sky */
+
+  ctx.fillStyle = "#76d7ff";
+  ctx.fillRect(0, 0, w, h);
+
+
+  /* Clouds */
+
+  ctx.fillStyle = "white";
+
+  ctx.beginPath();
+  ctx.arc(150, 120, 40, 0, Math.PI * 2);
+  ctx.arc(190, 110, 55, 0, Math.PI * 2);
+  ctx.arc(240, 125, 35, 0, Math.PI * 2);
+  ctx.fill();
+
+
+  /* Ground */
+
+  ctx.fillStyle = "#55c96b";
+  ctx.fillRect(0, h * 0.65, w, h * 0.35);
+
+
+  /* Track */
+
+  ctx.fillStyle = "#777";
+  ctx.fillRect(0, h * 0.65, w, 180);
+
+
+  /* Track lines */
+
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 6;
+
+  for (let x = 0; x < w; x += 100) {
+
+    ctx.beginPath();
+    ctx.moveTo(x, h * 0.74);
+    ctx.lineTo(x + 50, h * 0.74);
+    ctx.stroke();
+
+  }
+
+
+  /* Obstacles */
+
+  drawObstacle(w * 0.3, h * 0.62, "🧱");
+  drawObstacle(w * 0.55, h * 0.60, "🪵");
+  drawObstacle(w * 0.78, h * 0.62, "🔴");
+
+
+  /* Player */
+
+  const px = player.x;
+  const py = h * 0.65 - 55 + player.y;
+
+  ctx.font = "70px Arial";
+  ctx.textAlign = "center";
+
+  const skin = skins.find(s => s.name === equipped);
+
+  ctx.fillText(
+    skin ? skin.emoji : "🫘",
+    px,
+    py
+  );
+
+
+  /* Finish */
+
+  if (progress > 85) {
+
+    ctx.font = "60px Arial";
+
+    ctx.fillText(
+      "🏁",
+      w - 70,
+      h * 0.6
+    );
+
+  }
+
+}
+
+
+function drawObstacle(x, y, emoji) {
+
+  ctx.font = "65px Arial";
+  ctx.textAlign = "center";
+
+  ctx.fillText(emoji, x, y);
+
+}
+
+
+/* =========================
+   JUMP
+========================= */
+
+function jump() {
+
+  if (!gameRunning) return;
+
+  if (!player.jumping) {
+
+    player.vy = -15;
+    player.jumping = true;
+
+  }
+
+}
+
+
+/* =========================
+   QUALIFY
+========================= */
+
+function qualify() {
+
+  xp += 50;
+  coins += 100;
+
+  updateProfile();
+
+  if (round >= 4) {
+
+    winGame();
+
+    return;
+
+  }
+
+  document.getElementById("resultTitle").textContent =
+    "🎉 QUALIFIED!";
+
+  document.getElementById("resultMessage").textContent =
+    `You finished Round ${round}! +100 coins and +50 XP`;
+
+  showScreen("result");
+
+}
+
+
+/* =========================
+   NEXT ROUND
+========================= */
+
+function nextRound() {
+
+  round++;
+
+  startRound();
+
+}
+
+
+/* =========================
+   WIN
+========================= */
+
+function winGame() {
+
+  crowns++;
+
+  xp += 250;
+  coins += 500;
+
+  updateProfile();
+
+  document.getElementById("resultTitle").textContent =
+    "👑 YOU WIN!";
+
+  document.getElementById("resultMessage").textContent =
+    "You conquered all 4 rounds! +500 coins +250 XP";
+
+  showScreen("winner");
+
 }
 
 
@@ -362,1221 +484,298 @@ function startRound() {
 
 function openShop() {
 
-    console.log("SHOP BUTTON WORKED");
+  renderShop();
 
-    hide("menu");
-    hide("wheel");
-    hide("custom");
+  showScreen("shop");
 
-    show("shop");
-
-    renderShop();
 }
 
 
 function renderShop() {
 
-    const grid =
-        document.getElementById("shopGrid");
+  const container = document.getElementById("shopItems");
 
-    if (!grid)
-        return;
+  container.innerHTML = "";
 
-    grid.innerHTML = "";
+  skins.forEach(skin => {
 
-    const balance =
-        document.getElementById("shopCoins");
+    const div = document.createElement("div");
 
-    if (balance)
-        balance.textContent = coins;
+    div.style.margin = "15px";
+    div.style.padding = "15px";
+    div.style.background = "rgba(255,255,255,.2)";
+    div.style.borderRadius = "15px";
 
+    const ownedSkin = owned.includes(skin.name);
 
-    skins.forEach(skin => {
+    div.innerHTML = `
+      <h2>${skin.emoji} ${skin.name}</h2>
+      <p>${ownedSkin ? "OWNED" : skin.price + " 🪙"}</p>
+    `;
 
-        const owned =
-            ownedSkins.includes(
-                skin.id
-            );
+    const button = document.createElement("button");
 
-        const card =
-            document.createElement("div");
+    if (ownedSkin) {
 
-        card.className = "item";
+      button.textContent =
+        equipped === skin.name ? "EQUIPPED" : "EQUIP";
 
-        card.innerHTML = `
+      button.onclick = () => {
 
-            <div class="itemIcon">
-                ${skin.icon}
-            </div>
+        equipped = skin.name;
 
-            <h3>
-                ${skin.name}
-            </h3>
+        localStorage.setItem("equippedSkin", equipped);
 
-            <div>
-                ${
-                    owned
-                        ? "OWNED"
-                        : "🪙 " + skin.price
-                }
-            </div>
+        renderShop();
 
-            <button>
-                ${
-                    owned
-                        ? (
-                            equippedSkin === skin.id
-                                ? "EQUIPPED"
-                                : "EQUIP"
-                        )
-                        : "BUY"
-                }
-            </button>
-        `;
+      };
 
-        const button =
-            card.querySelector("button");
+    } else {
 
-        button.onclick = () => {
+      button.textContent = "BUY";
 
-            if (owned) {
+      button.onclick = () => {
 
-                equippedSkin =
-                    skin.id;
+        if (coins >= skin.price) {
 
-                localStorage.setItem(
-                    "equippedSkin",
-                    equippedSkin
-                );
+          coins -= skin.price;
 
-                renderShop();
+          owned.push(skin.name);
 
-                showToast(
-                    `${skin.name} equipped!`
-                );
+          localStorage.setItem(
+            "ownedSkins",
+            JSON.stringify(owned)
+          );
 
-                return;
-            }
+          updateProfile();
 
-            if (coins < skin.price) {
+          renderShop();
 
-                showToast(
-                    "You need more coins!"
-                );
+        } else {
 
-                return;
-            }
+          alert("You don't have enough coins!");
 
-            coins -= skin.price;
+        }
 
-            ownedSkins.push(
-                skin.id
-            );
+      };
 
-            equippedSkin =
-                skin.id;
+    }
 
-            localStorage.setItem(
-                "coins",
-                coins
-            );
+    div.appendChild(button);
 
-            localStorage.setItem(
-                "ownedSkins",
-                JSON.stringify(
-                    ownedSkins
-                )
-            );
+    container.appendChild(div);
 
-            localStorage.setItem(
-                "equippedSkin",
-                equippedSkin
-            );
+  });
 
-            updateProfile();
-            renderShop();
-
-            showToast(
-                `${skin.icon} ${skin.name} unlocked!`
-            );
-        };
-
-        grid.appendChild(card);
-    });
 }
 
 
 /* =========================
-   CUSTOMIZATION
+   CUSTOMIZE
 ========================= */
 
-function openCustom() {
+function openCustomize() {
 
-    console.log(
-        "CUSTOMIZE BUTTON WORKED"
-    );
+  renderCustomize();
 
-    hide("menu");
-    hide("shop");
-    hide("wheel");
+  showScreen("custom");
 
-    show("custom");
-
-    renderCustom();
 }
 
 
-function renderCustom() {
+function renderCustomize() {
 
-    const grid =
-        document.getElementById(
-            "skinGrid"
-        );
+  const container =
+    document.getElementById("customItems");
 
-    if (!grid)
-        return;
+  container.innerHTML = `
+    <h2>Current Skin</h2>
+    <div style="font-size:100px">${getSkinEmoji()}</div>
+    <h2>${equipped}</h2>
+    <p>Go to the shop to unlock more skins.</p>
+  `;
 
-    grid.innerHTML = "";
-
-
-    skins.forEach(skin => {
-
-        const owned =
-            ownedSkins.includes(
-                skin.id
-            );
-
-        if (!owned)
-            return;
-
-        const card =
-            document.createElement(
-                "div"
-            );
-
-        card.className =
-            "item";
-
-        card.innerHTML = `
-
-            <div class="itemIcon">
-                ${skin.icon}
-            </div>
-
-            <h3>
-                ${skin.name}
-            </h3>
-
-            <button>
-                ${
-                    equippedSkin === skin.id
-                        ? "EQUIPPED"
-                        : "EQUIP"
-                }
-            </button>
-        `;
-
-        card.querySelector(
-            "button"
-        ).onclick = () => {
-
-            equippedSkin =
-                skin.id;
-
-            localStorage.setItem(
-                "equippedSkin",
-                equippedSkin
-            );
-
-            renderCustom();
-
-            showToast(
-                `${skin.name} equipped!`
-            );
-        };
-
-        grid.appendChild(card);
-    });
+}
 
 
-    const preview =
-        document.getElementById(
-            "customPreview"
-        );
+function getSkinEmoji() {
 
-    const skin =
-        skins.find(
-            s =>
-                s.id === equippedSkin
-        ) || skins[0];
+  const skin = skins.find(
+    s => s.name === equipped
+  );
 
-    preview.innerHTML = `
+  return skin ? skin.emoji : "🫘";
 
-        <div
-            class="previewBean"
-            style="
-                background:${skin.color};
-            "
-        >
-            ${skin.icon}
-        </div>
-    `;
 }
 
 
 /* =========================
-   DAILY WHEEL
+   LUCKY WHEEL
 ========================= */
 
 function openWheel() {
 
-    console.log(
-        "WHEEL BUTTON WORKED"
-    );
+  document.getElementById("wheelResult").textContent =
+    "🎡";
 
-    hide("menu");
-    hide("shop");
-    hide("custom");
+  showScreen("wheel");
 
-    show("wheel");
-
-    refreshWheel();
-}
-
-
-function getToday() {
-
-    const date =
-        new Date();
-
-    return (
-        date.getFullYear() +
-        "-" +
-        (date.getMonth() + 1) +
-        "-" +
-        date.getDate()
-    );
-}
-
-
-function refreshWheel() {
-
-    const spinButton =
-        document.getElementById(
-            "spinBtn"
-        );
-
-    const lastSpin =
-        localStorage.getItem(
-            "dailyWheel"
-        );
-
-    if (
-        lastSpin ===
-        getToday()
-    ) {
-
-        spinButton.disabled = true;
-
-        spinButton.textContent =
-            "COME BACK TOMORROW";
-
-    } else {
-
-        spinButton.disabled = false;
-
-        spinButton.textContent =
-            "SPIN FREE";
-    }
 }
 
 
 function spinWheel() {
 
-    const spinButton =
-        document.getElementById(
-            "spinBtn"
-        );
+  const rewards = [
+    "100 COINS!",
+    "250 COINS!",
+    "500 COINS!",
+    "50 XP!",
+    "100 XP!",
+    "MYSTERY REWARD!"
+  ];
 
-    if (
-        localStorage.getItem(
-            "dailyWheel"
-        ) ===
-        getToday()
-    ) {
+  const reward =
+    rewards[Math.floor(Math.random() * rewards.length)];
 
-        return;
-    }
-
-    spinButton.disabled =
-        true;
-
-    const wheel =
-        document.getElementById(
-            "wheelGraphic"
-        );
-
-    wheel.style.transform =
-        "rotate(1800deg)";
-
-    setTimeout(() => {
-
-        const rewards = [
-
-            {
-                text: "+500 XP ⭐",
-                action: () => {
-                    xp += 500;
-                }
-            },
-
-            {
-                text: "+1000 XP ⭐",
-                action: () => {
-                    xp += 1000;
-                }
-            },
-
-            {
-                text: "+250 COINS 🪙",
-                action: () => {
-                    coins += 250;
-                }
-            },
-
-            {
-                text: "+500 COINS 🪙",
-                action: () => {
-                    coins += 500;
-                }
-            },
-
-            {
-                text: "FREE SKIN 🎨",
-                action: () => {
-
-                    const available =
-                        skins.filter(
-                            skin =>
-                                !ownedSkins.includes(
-                                    skin.id
-                                )
-                        );
-
-                    if (
-                        available.length === 0
-                    ) {
-
-                        coins += 1000;
-
-                        return;
-                    }
-
-                    const skin =
-                        available[
-                            Math.floor(
-                                Math.random() *
-                                available.length
-                            )
-                        ];
-
-                    ownedSkins.push(
-                        skin.id
-                    );
-
-                    localStorage.setItem(
-                        "ownedSkins",
-                        JSON.stringify(
-                            ownedSkins
-                        )
-                    );
-                }
-            }
-        ];
-
-        const reward =
-            rewards[
-                Math.floor(
-                    Math.random() *
-                    rewards.length
-                )
-            ];
-
-        reward.action();
-
-        localStorage.setItem(
-            "dailyWheel",
-            getToday()
-        );
-
-        localStorage.setItem(
-            "coins",
-            coins
-        );
-
-        localStorage.setItem(
-            "xp",
-            xp
-        );
-
-        updateProfile();
-
-        document.getElementById(
-            "wheelResult"
-        ).textContent =
-            `🎉 YOU WON: ${reward.text}`;
-
-        spinButton.textContent =
-            "COME BACK TOMORROW";
-
-        showToast(
-            reward.text
-        );
-
-    }, 2500);
-}
+  document.getElementById("wheelResult").textContent =
+    reward;
 
 
-/* =========================
-   RESULT
-========================= */
+  if (reward.includes("100 COINS")) {
 
-function showResult(
-    qualified = true
-) {
+    coins += 100;
 
-    gameRunning = false;
+  } else if (reward.includes("250 COINS")) {
 
-    hide("hud");
+    coins += 250;
 
-    show("result");
-
-    if (qualified) {
-
-        document.getElementById(
-            "resultIcon"
-        ).textContent =
-            "🏆";
-
-        document.getElementById(
-            "resultTitle"
-        ).textContent =
-            "QUALIFIED!";
-
-        document.getElementById(
-            "resultDescription"
-        ).textContent =
-            `You survived Round ${round}!`;
-
-        document.getElementById(
-            "continueBtn"
-        ).textContent =
-            "NEXT ROUND";
-
-        document.getElementById(
-            "continueBtn"
-        ).onclick =
-            nextRound;
-
-    } else {
-
-        document.getElementById(
-            "resultIcon"
-        ).textContent =
-            "💥";
-
-        document.getElementById(
-            "resultTitle"
-        ).textContent =
-            "ELIMINATED!";
-
-        document.getElementById(
-            "resultDescription"
-        ).textContent =
-            "The bots beat you this time!";
-
-        document.getElementById(
-            "continueBtn"
-        ).textContent =
-            "PLAY AGAIN";
-
-        document.getElementById(
-            "continueBtn"
-        ).onclick =
-            startGame;
-    }
-}
-
-
-function nextRound() {
-
-    if (round >= 4) {
-
-        winGame();
-
-        return;
-    }
-
-    round++;
-
-    hide("result");
-
-    show("hud");
-
-    gameRunning = true;
-
-    startRound();
-}
-
-
-function winGame() {
-
-    gameRunning = false;
-
-    crowns++;
+  } else if (reward.includes("500 COINS")) {
 
     coins += 500;
 
-    xp += 1000;
+  } else if (reward.includes("50 XP")) {
 
-    localStorage.setItem(
-        "crowns",
-        crowns
-    );
+    xp += 50;
 
-    localStorage.setItem(
-        "coins",
-        coins
-    );
+  } else if (reward.includes("100 XP")) {
 
-    localStorage.setItem(
-        "xp",
-        xp
-    );
+    xp += 100;
 
-    updateProfile();
+  } else {
 
-    hide("hud");
+    coins += 300;
+    xp += 50;
 
-    show("winner");
+  }
+
+  updateProfile();
+
 }
 
 
 /* =========================
-   TOAST
+   BUTTONS
 ========================= */
 
-function showToast(message) {
+document.getElementById("playBtn").onclick =
+  startGame;
 
-    const toast =
-        document.getElementById(
-            "toast"
-        );
+document.getElementById("shopBtn").onclick =
+  openShop;
 
-    toast.textContent =
-        message;
+document.getElementById("customBtn").onclick =
+  openCustomize;
 
-    toast.classList.add(
-        "show"
-    );
+document.getElementById("wheelBtn").onclick =
+  openWheel;
 
-    setTimeout(() => {
 
-        toast.classList.remove(
-            "show"
-        );
+document.getElementById("shopBackBtn").onclick =
+  () => showScreen("home");
 
-    }, 2000);
-}
+document.getElementById("customBackBtn").onclick =
+  () => showScreen("home");
 
+document.getElementById("wheelBackBtn").onclick =
+  () => showScreen("home");
 
-/* =========================
-   CLOSE BUTTONS
-========================= */
 
-document.getElementById(
-    "closeShop"
-).onclick = () => {
+document.getElementById("nextRoundBtn").onclick =
+  nextRound;
 
-    hide("shop");
-    show("menu");
-};
+document.getElementById("resultHomeBtn").onclick =
+  () => showScreen("home");
 
 
-document.getElementById(
-    "closeCustom"
-).onclick = () => {
+document.getElementById("winnerAgainBtn").onclick =
+  startGame;
 
-    hide("custom");
-    show("menu");
-};
+document.getElementById("winnerHomeBtn").onclick =
+  () => showScreen("home");
 
 
-document.getElementById(
-    "closeWheel"
-).onclick = () => {
+document.getElementById("quitBtn").onclick =
+  () => {
 
-    hide("wheel");
-    show("menu");
-};
+    gameRunning = false;
 
+    showScreen("home");
 
-/* =========================
-   MAIN BUTTONS
-========================= */
+  };
 
-document.getElementById(
-    "playBtn"
-).onclick =
-    startGame;
 
+/* GAME CONTROLS */
 
-document.getElementById(
-    "shopBtn"
-).onclick =
-    openShop;
+document.getElementById("leftBtn").onmousedown =
+  () => keys.left = true;
 
+document.getElementById("leftBtn").onmouseup =
+  () => keys.left = false;
 
-document.getElementById(
-    "customBtn"
-).onclick =
-    openCustom;
+document.getElementById("rightBtn").onmousedown =
+  () => keys.right = true;
 
+document.getElementById("rightBtn").onmouseup =
+  () => keys.right = false;
 
-document.getElementById(
-    "wheelBtn"
-).onclick =
-    openWheel;
+document.getElementById("jumpBtn").onclick =
+  jump;
 
 
-document.getElementById(
-    "spinBtn"
-).onclick =
-    spinWheel;
+/* KEYBOARD */
 
+document.addEventListener("keydown", e => {
 
-document.getElementById(
-    "againBtn"
-).onclick =
-    startGame;
+  if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
+    keys.left = true;
+  }
 
+  if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") {
+    keys.right = true;
+  }
 
-document.getElementById(
-    "homeBtn"
-).onclick = () => {
+  if (
+    e.key === " " ||
+    e.key === "ArrowUp" ||
+    e.key.toLowerCase() === "w"
+  ) {
+    jump();
+  }
 
-    hide("winner");
+});
 
-    show("menu");
 
-    updateProfile();
-};
+document.addEventListener("keyup", e => {
 
+  if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
+    keys.left = false;
+  }
 
-/* =========================
-   KEYBOARD
-========================= */
+  if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") {
+    keys.right = false;
+  }
 
-document.addEventListener(
-    "keydown",
-    event => {
-
-        keys[
-            event.key.toLowerCase()
-        ] = true;
-
-        if (
-            event.code ===
-            "Space"
-        ) {
-
-            player.vy = 10;
-        }
-    }
-);
-
-
-document.addEventListener(
-    "keyup",
-    event => {
-
-        keys[
-            event.key.toLowerCase()
-        ] = false;
-    }
-);
-
-
-/* =========================
-   GAME DRAWING
-========================= */
-
-function draw() {
-
-    const map =
-        maps[
-            (round - 1) %
-            maps.length
-        ];
-
-    ctx.fillStyle =
-        map.color;
-
-    ctx.fillRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-
-    // sky
-
-    ctx.fillStyle =
-        "rgba(255,255,255,.12)";
-
-    for (
-        let i = 0;
-        i < 20;
-        i++
-    ) {
-
-        ctx.beginPath();
-
-        ctx.arc(
-            (i * 173) %
-                canvas.width,
-
-            80 +
-                ((i * 91) %
-                    250),
-
-            2,
-
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-    }
-
-
-    // course
-
-    ctx.fillStyle =
-        "rgba(0,0,0,.15)";
-
-    ctx.fillRect(
-        canvas.width * .15,
-        canvas.height * .5,
-        canvas.width * .7,
-        canvas.height * .5
-    );
-
-
-    // finish line
-
-    ctx.fillStyle =
-        "white";
-
-    ctx.fillRect(
-        canvas.width * .25,
-        canvas.height * .35,
-        canvas.width * .5,
-        15
-    );
-
-
-    for (
-        let i = 0;
-        i < 10;
-        i++
-    ) {
-
-        ctx.fillStyle =
-            i % 2
-                ? "black"
-                : "white";
-
-        ctx.fillRect(
-            canvas.width * .25 +
-                i *
-                canvas.width *
-                .05,
-
-            canvas.height * .35,
-
-            canvas.width * .025,
-
-            15
-        );
-    }
-
-
-    // player
-
-    const px =
-        canvas.width / 2 +
-        player.x * 25;
-
-    const py =
-        canvas.height * .65 -
-        player.y * 20;
-
-    const skin =
-        skins.find(
-            s =>
-                s.id ===
-                equippedSkin
-        ) || skins[0];
-
-
-    ctx.beginPath();
-
-    ctx.ellipse(
-        px,
-        py,
-        32,
-        45,
-        0,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fillStyle =
-        skin.color;
-
-    ctx.fill();
-
-
-    // eyes
-
-    ctx.fillStyle =
-        "black";
-
-    ctx.beginPath();
-
-    ctx.arc(
-        px - 10,
-        py - 8,
-        5,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.arc(
-        px + 10,
-        py - 8,
-        5,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fill();
-
-
-    // skin icon
-
-    if (
-        skin.id !==
-        "classic"
-    ) {
-
-        ctx.font =
-            "22px Arial";
-
-        ctx.textAlign =
-            "center";
-
-        ctx.fillText(
-            skin.icon,
-            px,
-            py - 48
-        );
-    }
-
-
-    // bots
-
-    for (
-        let i = 0;
-        i < 19;
-        i++
-    ) {
-
-        const botX =
-            canvas.width * .2 +
-            (
-                i % 10
-            ) *
-            canvas.width *
-            .065;
-
-        const botY =
-            canvas.height *
-            .62 +
-            Math.sin(
-                performance.now() /
-                400 +
-                i
-            ) *
-            8;
-
-        ctx.beginPath();
-
-        ctx.ellipse(
-            botX,
-            botY,
-            20,
-            28,
-            0,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fillStyle =
-            skins[
-                i %
-                skins.length
-            ].color;
-
-        ctx.fill();
-
-        ctx.fillStyle =
-            "black";
-
-        ctx.beginPath();
-
-        ctx.arc(
-            botX - 6,
-            botY - 4,
-            3,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.arc(
-            botX + 6,
-            botY - 4,
-            3,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-    }
-
-
-    // obstacles
-
-    for (
-        let i = 0;
-        i < 7;
-        i++
-    ) {
-
-        const ox =
-            canvas.width * .25 +
-            i *
-            canvas.width *
-            .075;
-
-        const oy =
-            canvas.height * .53;
-
-        ctx.save();
-
-        ctx.translate(
-            ox,
-            oy
-        );
-
-        ctx.rotate(
-            performance.now() /
-            500 +
-            i
-        );
-
-        ctx.fillStyle =
-            i % 2
-                ? "#ffd43d"
-                : "#ff4773";
-
-        ctx.fillRect(
-            -45,
-            -8,
-            90,
-            16
-        );
-
-        ctx.restore();
-    }
-
-
-    // progress
-
-    const progress =
-        Math.min(
-            player.z / 100,
-            1
-        );
-
-    ctx.fillStyle =
-        "rgba(0,0,0,.35)";
-
-    ctx.fillRect(
-        30,
-        canvas.height - 35,
-        canvas.width - 60,
-        12
-    );
-
-    ctx.fillStyle =
-        "#ff4773";
-
-    ctx.fillRect(
-        30,
-        canvas.height - 35,
-        (
-            canvas.width - 60
-        ) *
-        progress,
-        12
-    );
-}
-
-
-/* =========================
-   UPDATE
-========================= */
-
-let lastTime =
-    performance.now();
-
-
-function update() {
-
-    const now =
-        performance.now();
-
-    const dt =
-        Math.min(
-            (now - lastTime) /
-            1000,
-            .05
-        );
-
-    lastTime =
-        now;
-
-
-    if (
-        gameRunning
-    ) {
-
-        let dx = 0;
-        let dz = 0;
-
-
-        if (
-            keys.a ||
-            keys.arrowleft
-        )
-            dx--;
-
-        if (
-            keys.d ||
-            keys.arrowright
-        )
-            dx++;
-
-        if (
-            keys.w ||
-            keys.arrowup
-        )
-            dz++;
-
-        if (
-            keys.s ||
-            keys.arrowdown
-        )
-            dz--;
-
-
-        player.x +=
-            dx *
-            player.speed *
-            dt;
-
-        player.z +=
-            dz *
-            player.speed *
-            dt;
-
-
-        player.vy -=
-            25 *
-            dt;
-
-        player.y +=
-            player.vy *
-            dt;
-
-
-        if (
-            player.y < 0
-        ) {
-
-            player.y = 0;
-
-            player.vy = 0;
-        }
-
-
-        player.x =
-            Math.max(
-                -8,
-                Math.min(
-                    8,
-                    player.x
-                )
-            );
-
-
-        if (
-            player.z >= 100
-        ) {
-
-            if (
-                round >= 4
-            ) {
-
-                winGame();
-
-            } else {
-
-                showResult(
-                    true
-                );
-            }
-        }
-
-
-        if (
-            player.z < -10
-        ) {
-
-            player.z = -10;
-        }
-    }
-
-
-    draw();
-
-    requestAnimationFrame(
-        update
-    );
-}
+});
 
 
 /* =========================
@@ -1585,6 +784,10 @@ function update() {
 
 updateProfile();
 
-refreshWheel();
+showScreen("home");
 
-update();
+resizeCanvas();
+
+gameLoop();
+
+console.log("BEAN BLAST READY!");
