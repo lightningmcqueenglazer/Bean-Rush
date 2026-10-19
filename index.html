@@ -1,111 +1,39 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bean Blast</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#15152d"><title>Bean Rush — Big bean energy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-  <!-- HOME -->
-  <div id="home" class="screen">
-    <h1>BEAN BLAST</h1>
-    <p>Ultimate Obstacle Challenge</p>
-
-    <button id="playBtn">PLAY</button>
-    <button id="shopBtn">SHOP</button>
-    <button id="customBtn">CUSTOMIZE</button>
-    <button id="wheelBtn">LUCKY WHEEL</button>
-
-    <div id="profile">
-      <span>⭐ Level <b id="level">1</b></span>
-      <span>XP: <b id="xp">0</b></span>
-      <span>🪙 <b id="coins">500</b></span>
-      <span>👑 <b id="crowns">0</b></span>
-    </div>
-  </div>
-
-
-  <!-- GAME -->
-  <div id="gameScreen" class="screen hidden">
-
-    <div id="hud">
-      <span id="roundText">ROUND 1 / 4</span>
-      <span id="mapText">JUNGLE RUN</span>
-      <span id="progressText">0%</span>
-    </div>
-
-    <canvas id="gameCanvas"></canvas>
-
-    <div id="controls">
-      <button id="leftBtn">◀</button>
-      <button id="jumpBtn">JUMP</button>
-      <button id="rightBtn">▶</button>
-    </div>
-
-    <button id="quitBtn">QUIT</button>
-  </div>
-
-
-  <!-- SHOP -->
-  <div id="shopScreen" class="screen hidden">
-    <h1>SHOP</h1>
-    <p>Spend coins on cool skins!</p>
-
-    <div id="shopItems"></div>
-
-    <button id="shopBackBtn">BACK</button>
-  </div>
-
-
-  <!-- CUSTOMIZE -->
-  <div id="customScreen" class="screen hidden">
-    <h1>CUSTOMIZE</h1>
-
-    <div id="customItems"></div>
-
-    <button id="customBackBtn">BACK</button>
-  </div>
-
-
-  <!-- WHEEL -->
-  <div id="wheelScreen" class="screen hidden">
-    <h1>LUCKY WHEEL</h1>
-
-    <div id="wheelResult">🎡</div>
-
-    <button id="spinBtn">SPIN</button>
-    <button id="wheelBackBtn">BACK</button>
-  </div>
-
-
-  <!-- RESULT -->
-  <div id="resultScreen" class="screen hidden">
-    <h1 id="resultTitle">QUALIFIED!</h1>
-
-    <p id="resultMessage"></p>
-
-    <button id="nextRoundBtn">NEXT ROUND</button>
-    <button id="resultHomeBtn">HOME</button>
-  </div>
-
-
-  <!-- WINNER -->
-  <div id="winnerScreen" class="screen hidden">
-    <h1>👑 YOU WIN! 👑</h1>
-
-    <p>Congratulations!</p>
-    <p>You earned a crown and XP!</p>
-
-    <button id="winnerAgainBtn">PLAY AGAIN</button>
-    <button id="winnerHomeBtn">HOME</button>
-  </div>
-
-
-  <!-- IMPORTANT: game.js MUST be last -->
-  <script src="game.js"></script>
-
-</body>
-</html>
+  <main class="shell">
+    <header class="topbar"><a class="brand" href="#" aria-label="Bean Rush home"><span class="brand-mark">B</span><span>bean<span class="brand-light">rush</span></span></a><div class="top-note"><span class="online-dot"></span> THE LOBBY IS OPEN</div><nav class="top-actions"><button class="nav-button active" id="playNav">PLAY</button><button class="nav-button" id="customizeNav">CUSTOMIZE</button><button class="nav-button" id="shopNav">SHOP <span class="nav-currency" id="navXp">0 XP</span></button></nav><button class="sound-button" id="soundButton" aria-label="Toggle sound" title="Toggle sound">♫ <span>SOUND ON</span></button></header>
+    <section class="game-layout">
+      <aside class="left-rail"><div class="eyebrow"><span class="sparkle">✦</span> SEASON 04 <span class="rail-line"></span></div><h1>Big bean.<br><em>Big energy.</em></h1><p class="intro">A tiny bean. A giant course.<br>One very questionable plan.</p>
+        <div class="event-card"><div class="event-top"><span class="event-pill">LIVE EVENT</span><span class="event-time">4 ROUND SHOWDOWN</span></div><div class="event-icon">🏁</div><h2>Bean there,<br>done that.</h2><p>Outrun the chaos. Outsass the bots.</p><div class="event-progress"><span id="eventProgress"></span></div><div class="progress-label"><span>MATCH PROGRESS</span><b id="eventRounds">0 / 4 ROUNDS</b></div></div>
+        <div class="season-note"><span class="mini-star">✦</span><div><b>NEW SEASON, NEW CHAOS</b><small>Fresh maps. Fresh beans. Same questionable balance.</small></div></div>
+      </aside>
+      <section class="play-column"><div class="stage-frame"><canvas id="gameCanvas" aria-label="Bean Rush game"></canvas><div class="stage-vignette"></div>
+          <div class="stage-hud"><div class="round-tag"><span class="round-dot"></span><span id="roundLabel">ROUND 1 OF 4 · QUALIFIER</span></div><div class="players-tag"><span>●</span> <b id="playerCount">12</b> BEANS</div></div>
+          <div class="map-caption"><span class="map-icon" id="mapIcon">🌈</span><div><b id="mapTitle">RAINBOW ROAD</b><small id="mapSubtitle">DON’T LOOK DOWN. ACTUALLY, MAYBE DO.</small></div></div>
+          <div class="center-prompt" id="centerPrompt"><span class="prompt-kicker" id="promptKicker">FOUR ROUNDS. ONE CROWN.</span><strong id="promptTitle">THE FLOOR IS<br><em>PROBABLY FINE.</em></strong><button id="playButton" class="play-button">START MATCH <span>→</span></button><div class="prompt-foot" id="promptFoot">12 BEANS ENTER. ONLY ONE GETS THE CROWN.</div></div>
+          <div class="countdown hidden" id="countdown">3</div>
+          <div class="result-panel hidden" id="resultPanel"><div class="result-emoji" id="resultEmoji">🏆</div><span class="prompt-kicker" id="resultKicker">WHAT A LEGEND</span><strong id="resultTitle">YOU DID IT!</strong><p id="resultText">The other beans are still thinking about it.</p><button class="play-button" id="againButton">NEXT ROUND <span>→</span></button></div>
+          <div class="game-hud hidden" id="gameHud"><div class="hud-top"><div><small>TIME LEFT</small><b id="timer">00:30</b></div><div class="qualify"><small id="qualifyLabel">QUALIFY TOP</small><b id="qualifyCount">6 <span>BEANS</span></b></div></div><div class="race-progress"><span id="raceFill"></span><i id="raceMarker"></i></div><div class="hud-bottom"><span id="raceStatus">GET TO THE FINISH!</span><span><kbd>SPACE</kbd> JUMP</span></div></div>
+          <div class="toast hidden" id="toast">NICE JUMP!</div>
+          <div class="controls-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>MOVE</span><kbd>SPACE</kbd><span>JUMP</span><kbd>SHIFT</kbd><span>DIVE</span></div>
+        </div>
+        <div class="map-row"><div class="map-row-label"><span>✦</span> PICK YOUR CHAOS</div><div class="map-list" id="mapList"></div></div>
+        <div class="under-stage"><span>✦ NO REAL BEANS WERE RAGDOLLED.</span><span>MADE FOR THE LOVE OF THE WOBBLE.</span></div>
+      </section>
+      <aside class="right-rail"><div class="profile-card"><div class="profile-head"><span>YOUR BEAN · 👑 <b id="crownCount">0</b></span><button class="dots" id="randomize" title="Randomize bean">✧</button></div><div class="bean-preview" id="beanPreview"><div class="preview-spark p1">✦</div><div class="preview-spark p2">✧</div><div class="preview-bean"><div class="bean-face"><i></i><i></i><b></b></div></div><div class="preview-shadow"></div><span class="level-badge">LVL <b id="levelBadge">01</b></span></div><div class="bean-name-row"><div><small>THE MAGNIFICENT</small><h3 id="beanName">Captain Wiggle</h3></div><button class="edit-button" id="changeName" title="Change bean name">✎</button></div><div class="color-pair"><div><small>MAIN COLOR</small><div class="bean-colors" id="beanColors"><button class="color-swatch selected" style="--swatch:#ff5e87" data-color="#ff5e87" aria-label="Pink bean"></button><button class="color-swatch" style="--swatch:#5aebc0" data-color="#5aebc0" aria-label="Mint bean"></button><button class="color-swatch" style="--swatch:#ffd84c" data-color="#ffd84c" aria-label="Yellow bean"></button><button class="color-swatch" style="--swatch:#a584ff" data-color="#a584ff" aria-label="Purple bean"></button><button class="color-swatch" style="--swatch:#59baff" data-color="#59baff" aria-label="Blue bean"></button></div></div><div><small>ACCENT</small><div class="bean-colors" id="accentColors"><button class="color-swatch accent-swatch selected" style="--swatch:#d7f36a" data-accent="#d7f36a" aria-label="Lime accent"></button><button class="color-swatch accent-swatch" style="--swatch:#ffffff" data-accent="#ffffff" aria-label="Cloud accent"></button><button class="color-swatch accent-swatch" style="--swatch:#29213d" data-accent="#29213d" aria-label="Midnight accent"></button><button class="color-swatch accent-swatch" style="--swatch:#ffd84c" data-accent="#ffd84c" aria-label="Sunshine accent"></button></div></div></div><div class="bean-xp"><span>BEAN XP</span><span id="xpLabel">0 / 500</span></div><div class="xp-track"><i id="xpFill"></i></div></div>
+        <div class="bot-card"><div class="bot-title"><span>THE COMPETITION</span><span class="bot-live"><i></i> 11 LIVE</span></div><div class="bot-list" id="botList"></div><div class="bot-foot">ALL SKILL. QUESTIONABLE PATHFINDING.</div></div>
+        <div class="tip-card"><div class="tip-icon">💡</div><p><b>BEAN TIP</b><br>Timing is everything. Panic is optional.</p></div>
+      </aside>
+    </section>
+    <footer class="footer"><span>© 2025 BEAN RUSH STUDIO</span><span>BUILT DIFFERENT. FALLS THE SAME.</span><span><a href="#" id="howTo">HOW TO PLAY</a> &nbsp;·&nbsp; <a href="#">BEAN CODE</a></span></footer>
+  </main><div id="shopModal" class="modal hidden"><section class="shop-shell"><button class="modal-close" id="shopClose">×</button><span class="prompt-kicker">THE BEAN BOUTIQUE</span><h2>STYLE POINTS.<br><em>ZERO ADVANTAGE.</em></h2><div class="shop-balance">YOUR BALANCE <b id="shopBalance">0 XP</b></div><div class="shop-tabs"><button class="shop-tab active" data-tab="featured">FEATURED</button><button class="shop-tab" data-tab="wardrobe">WARDROBE</button><button class="shop-tab" data-tab="presets">PRESETS</button></div><div id="shopContent" class="shop-content"></div></section></div>
+  <div id="modal" class="modal hidden"><div class="modal-card"><button class="modal-close" id="modalClose">×</button><span class="prompt-kicker">THE ONLY RULE</span><h2>KEEP ON<br><em>WOBBLING.</em></h2><p>Use <b>A/D</b> or the arrow keys to dodge, hold <b>W</b> to sprint, and press <b>SPACE</b> to jump. Qualify through the first three rounds, survive the sweep, then win the final to earn a crown. Cosmetics are just for fun.</p><button class="play-button" id="modalPlay">GOT IT <span>→</span></button></div></div>
+  <script src="mini3d.js"></script><script src="game.js"></script>
+</body></html>
